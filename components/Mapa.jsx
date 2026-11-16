@@ -16,7 +16,7 @@ import Icon from './Icon';
 import maplibregl from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import { ScatterplotLayer, TextLayer, PathLayer, IconLayer } from '@deck.gl/layers';
-import { ICONE_SEDE, ICONE_ESCRITORIO, ALTURA_SEDE, ALTURA_ESCRITORIO } from '@/lib/icones/pinosSebrae';
+import { ALTURA_SEDE, ALTURA_ESCRITORIO, atlasPinos } from '@/lib/icones/pinosSebrae';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { BIOMAS } from '@/lib/dados/biomas';
 import { BASE, DIM, PRANCHA, expressaoCor, expressaoHachura, hexParaRgb } from '@/lib/escalas';
@@ -413,20 +413,26 @@ const Mapa = forwardRef(function Mapa(
   }, [pronto, destaque, centros, uf]);
 
   /* ------------------------------------------------ Deck.gl: Sebrae, siglas e prancha */
+  const [pinos, setPinos] = useState(null);
+  useEffect(() => {
+    atlasPinos().then(setPinos).catch(() => setPinos(null));
+  }, []);
   useEffect(() => {
     if (!pronto || !deckRef.current) return;
     const layers = [];
 
     if (prancha) layers.push(...prancha.camadasDeck);
 
-    if (camadas.sebrae && sebrae) {
+    if (camadas.sebrae && sebrae && pinos) {
       layers.push(
         new IconLayer({
           id: 'sebrae',
           // sedes por último, para ficarem por cima dos escritórios
           data: [...sebrae].sort((a, b) => a.sede - b.sede),
           getPosition: (d) => d.pos,
-          getIcon: (d) => (d.sede ? ICONE_SEDE : ICONE_ESCRITORIO),
+          iconAtlas: pinos.atlas,
+          iconMapping: pinos.mapping,
+          getIcon: (d) => (d.sede ? 'sede' : 'escritorio'),
           getSize: (d) => (d.sede ? ALTURA_SEDE : ALTURA_ESCRITORIO),
           sizeUnits: 'pixels',
           pickable: true,
@@ -455,7 +461,7 @@ const Mapa = forwardRef(function Mapa(
       );
     }
     deckRef.current.setProps({ layers });
-  }, [pronto, camadas.sebrae, sebrae, rotulosUF, prancha]);
+  }, [pronto, camadas.sebrae, sebrae, rotulosUF, prancha, pinos]);
 
   const map = mapRef.current;
   return (
