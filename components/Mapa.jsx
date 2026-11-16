@@ -15,7 +15,8 @@ import { asset } from '@/lib/asset';
 import Icon from './Icon';
 import maplibregl from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { ScatterplotLayer, TextLayer, PathLayer } from '@deck.gl/layers';
+import { ScatterplotLayer, TextLayer, PathLayer, IconLayer } from '@deck.gl/layers';
+import { ICONE_SEDE, ICONE_ESCRITORIO, ALTURA_SEDE, ALTURA_ESCRITORIO } from '@/lib/icones/pinosSebrae';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { BIOMAS } from '@/lib/dados/biomas';
 import { BASE, DIM, PRANCHA, expressaoCor, expressaoHachura, hexParaRgb } from '@/lib/escalas';
@@ -420,17 +421,14 @@ const Mapa = forwardRef(function Mapa(
 
     if (camadas.sebrae && sebrae) {
       layers.push(
-        new ScatterplotLayer({
+        new IconLayer({
           id: 'sebrae',
-          data: sebrae,
+          // sedes por último, para ficarem por cima dos escritórios
+          data: [...sebrae].sort((a, b) => a.sede - b.sede),
           getPosition: (d) => d.pos,
-          getRadius: (d) => (d.sede ? 7 : 4),
-          radiusUnits: 'pixels',
-          getFillColor: (d) => (d.sede ? [7, 5, 104, 255] : [42, 79, 218, 230]),
-          getLineColor: (d) => (d.sede ? [201, 223, 96, 255] : [255, 255, 255, 255]),
-          lineWidthUnits: 'pixels',
-          getLineWidth: (d) => (d.sede ? 2.5 : 1.5),
-          stroked: true,
+          getIcon: (d) => (d.sede ? ICONE_SEDE : ICONE_ESCRITORIO),
+          getSize: (d) => (d.sede ? ALTURA_SEDE : ALTURA_ESCRITORIO),
+          sizeUnits: 'pixels',
           pickable: true,
           onHover: (i) => cb.current.onHover(i.object ? { tipo: 'sebrae', id: i.object.id, obj: i.object, x: i.x, y: i.y } : null),
         }),

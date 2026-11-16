@@ -24,6 +24,7 @@ import Estudos from './estudos/Estudos';
 import CorteSecao from './CorteSecao';
 import Rodape from './Rodape';
 import SeletorTema from './SeletorTema';
+import { URL_SEDE, URL_ESCRITORIO } from '@/lib/icones/pinosSebrae';
 import CalendarioDesktop from './calendario/CalendarioDesktop';
 import { carregarIGs, produtoCurto } from '@/lib/dados/ig';
 import { cadeiaBioma } from '@/lib/dados/producao';
@@ -614,10 +615,10 @@ export default function Observatorio() {
               {camadas.sebrae && (
                 <div className="mt-2 flex items-center gap-3 border-t border-[#efeae2] pt-2 text-[11.5px] text-[#2b2b30]">
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="h-3 w-3 rounded-full border-2 border-lima bg-navy" /> Sede
+                    <img src={URL_SEDE} alt="" className="h-[22px] w-auto" /> Sede
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full border border-white bg-azul" /> Escritório
+                    <img src={URL_ESCRITORIO} alt="" className="h-[16px] w-auto" /> Escritório
                   </span>
                 </div>
               )}
