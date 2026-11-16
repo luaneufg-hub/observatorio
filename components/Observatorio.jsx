@@ -11,7 +11,7 @@ import { BIOMAS, BIOMA_BY_ID } from '@/lib/dados/biomas';
 import { GRUPOS, INDICADOR_BY_ID, DADOS, formatar, SETORES, quocienteLocacional, ATUALIZADO_EM, ehReal } from '@/lib/dados/indicadores';
 import { carregarMunicipios, valoresMunicipais } from '@/lib/dados/municipios';
 import { metricasUF, metricasMunicipio } from '@/lib/dados/metricas';
-import { classes, corDe, corDoRotulo, DIM, PRANCHA, BASE } from '@/lib/escalas';
+import { classes, corDe, corDoRotulo, DIM, PRANCHA, BASE, escurecer } from '@/lib/escalas';
 import { geo } from '@/lib/geo';
 import MicroPequenas from './diagnostico/MicroPequenas';
 import SebraeTerritorio from './SebraeTerritorio';
@@ -246,7 +246,10 @@ export default function Observatorio() {
       return { uf: mSel.uf, titulo: mSel.nome, n: categorico ? null : posMun[mSel.cod], ...metricasMunicipio(ind, mSel, v, totalUF, posMun[mSel.cod], rankingMun.length) };
     }
     if (uf) {
-      const extra = categorico ? { cab: BIOMA_BY_ID[DADOS[uf][ind.id]].cor, quadro: BIOMA_BY_ID[DADOS[uf][ind.id]].cor } : {};
+      // biomas: cabeçalho na cor do bioma e o quadrado da bandeira num tom mais escuro (como o magenta no padrão),
+      // para a bandeira ficar no seu quadrado e alinhada com o corpo da caixa
+      const corBioma = categorico ? BIOMA_BY_ID[DADOS[uf][ind.id]].cor : null;
+      const extra = categorico ? { cab: corBioma, quadro: escurecer(corBioma, 0.3) } : {};
       return { uf, titulo: UF_BY_SIGLA[uf].nome, n: categorico ? null : posUF[uf], ...metricasUF(ind, uf, ind.brasil ?? mediaUF), ...extra };
     }
     return null;
