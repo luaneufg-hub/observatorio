@@ -436,9 +436,9 @@ export default function Observatorio() {
                 {ILUSTRACAO_SETOR[ind.id] && <KitSvg nome={ILUSTRACAO_SETOR[ind.id]} size={64} className="flex-none" />}
               </div>
               <Nota>
-                {grupo.rotulo} · {ATUALIZADO_EM} ·{' '}
-                {/* com estado aberto, o mapa mostra os municípios */}
-                {ehReal(ind, uf ? 'mun' : 'uf') ? 'dados reais da API do Observatório' : ind.real ? 'reais por estado, ilustrativos por município' : 'valores ilustrativos'}
+                {grupo.rotulo} · {ATUALIZADO_EM}
+                {/* só os dados que ainda não são reais levam aviso; com estado aberto, o mapa mostra os municípios */}
+                {!ehReal(ind, uf ? 'mun' : 'uf') && <> · {ind.real ? 'reais por estado, ilustrativos por município' : 'valores ilustrativos'}</>}
               </Nota>
             </Card>
 

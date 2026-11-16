@@ -109,7 +109,7 @@ export default function SebraeTerritorio({ base, uf, mun, destaque, onDestacar }
           </ul>
           <Nota>
             {mun ? 'Toque num programa para ver no mapa onde mais ele está presente.' : `Municípios participantes. Toque num programa para destacá-los no mapa.`}{' '}
-            {reais} de {linhas.length} com dado real.
+            {reais < linhas.length && `${reais} de ${linhas.length} com dado real.`}
           </Nota>
         </>
       )}
