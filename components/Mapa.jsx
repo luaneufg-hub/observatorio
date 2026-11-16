@@ -319,6 +319,18 @@ const Mapa = forwardRef(function Mapa(
     map.setFilter('mun-sel-line', ['==', ['get', 'cod'], municipio ?? -1]);
   }, [pronto, modo, uf, municipio, camadas, classesUF, classesMun, munBR, munUF]);
 
+  /* ------------------------------------------------ transparência: com pinos do Sebrae ou biomas ligados,
+     as cores do indicador ficam translúcidas para os pinos e as linhas dos biomas se destacarem */
+  useEffect(() => {
+    if (!pronto) return;
+    const map = mapRef.current;
+    const realce = camadas.sebrae || camadas.bioma;
+    for (const l of ['ufs-fill', 'mun-br-fill', 'mun-uf-fill']) {
+      map.setPaintProperty(l, 'fill-opacity-transition', { duration: 400 });
+      map.setPaintProperty(l, 'fill-opacity', realce ? 0.55 : 1);
+    }
+  }, [pronto, camadas.sebrae, camadas.bioma]);
+
   /* ------------------------------------------------ destaque de programa */
   useEffect(() => {
     if (!pronto) return;
@@ -414,6 +426,23 @@ const Mapa = forwardRef(function Mapa(
 
   /* ------------------------------------------------ Deck.gl: Sebrae, siglas e prancha */
   const [pinos, setPinos] = useState(null);
+  // pulso dos pinos (halo que cresce e se apaga); parado para quem prefere menos movimento
+  const [tempo, setTempo] = useState(0);
+  const semMovimento = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  useEffect(() => {
+    if (!camadas.sebrae || semMovimento) return;
+    let id;
+    let ultimo = 0;
+    const passo = (t) => {
+      if (t - ultimo > 33) {
+        ultimo = t;
+        setTempo(t);
+      }
+      id = requestAnimationFrame(passo);
+    };
+    id = requestAnimationFrame(passo);
+    return () => cancelAnimationFrame(id);
+  }, [camadas.sebrae, semMovimento]);
   useEffect(() => {
     atlasPinos().then(setPinos).catch(() => setPinos(null));
   }, []);
@@ -424,6 +453,21 @@ const Mapa = forwardRef(function Mapa(
     if (prancha) layers.push(...prancha.camadasDeck);
 
     if (camadas.sebrae && sebrae && pinos) {
+      const CICLO = 2200; // ms
+      const fase = (d) => (semMovimento ? 0.35 : ((tempo + (d.fase ?? 0) * CICLO) % CICLO) / CICLO);
+      layers.push(
+        new ScatterplotLayer({
+          id: 'sebrae-pulso',
+          data: sebrae,
+          getPosition: (d) => d.pos,
+          radiusUnits: 'pixels',
+          getRadius: (d) => (d.sede ? 6 : 4) + fase(d) * (d.sede ? 20 : 14),
+          getFillColor: (d) => [...(d.sede ? [42, 79, 218] : [255, 128, 200]), Math.round(110 * (1 - fase(d)))],
+          stroked: false,
+          pickable: false,
+          updateTriggers: { getRadius: tempo, getFillColor: tempo },
+        }),
+      );
       layers.push(
         new IconLayer({
           id: 'sebrae',
@@ -461,7 +505,7 @@ const Mapa = forwardRef(function Mapa(
       );
     }
     deckRef.current.setProps({ layers });
-  }, [pronto, camadas.sebrae, sebrae, rotulosUF, prancha, pinos]);
+  }, [pronto, camadas.sebrae, sebrae, rotulosUF, prancha, pinos, tempo, semMovimento]);
 
   const map = mapRef.current;
   return (

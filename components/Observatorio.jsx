@@ -172,13 +172,13 @@ export default function Observatorio() {
     for (const u of UFS) {
       const ms = base.porUF[u.sigla] || [];
       const cap = ms.find((m) => m.cap);
-      if (cap) out.push({ id: `sede-${u.sigla}`, pos: [cap.lon, cap.lat], sede: true, nome: cap.nome, uf: u.sigla });
+      if (cap) out.push({ id: `sede-${u.sigla}`, pos: [cap.lon, cap.lat], sede: true, nome: cap.nome, uf: u.sigla, fase: (cap.cod % 97) / 97 });
       const k = Math.max(1, Math.round((DADOS[u.sigla].pontos - 1) / 5));
       [...ms]
         .filter((m) => !m.cap)
         .sort((a, b) => base.peso.get(b.cod) - base.peso.get(a.cod))
         .slice(0, k)
-        .forEach((m) => out.push({ id: `er-${m.cod}`, pos: [m.lon, m.lat], sede: false, nome: m.nome, uf: u.sigla }));
+        .forEach((m) => out.push({ id: `er-${m.cod}`, pos: [m.lon, m.lat], sede: false, nome: m.nome, uf: u.sigla, fase: (m.cod % 89) / 89 }));
     }
     return out;
   }, [base]);
