@@ -8,6 +8,10 @@
 // (opcional) um style de mapa base em NEXT_PUBLIC_MAP_STYLE.
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { createRoot } from 'react-dom/client';
+import { KitSvg } from './Icon';
+import { fotoIG } from '@/lib/dados/igFotos';
+import { asset } from '@/lib/asset';
 import Icon from './Icon';
 import maplibregl from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
@@ -152,6 +156,10 @@ const Mapa = forwardRef(function Mapa(
         map.addLayer({ id: `prog-${src}-fill`, type: 'fill', source: src, layout: { visibility: 'none' }, filter: ['in', ['get', 'cod'], ['literal', []]], paint: { 'fill-color': '#D81E5B', 'fill-opacity': 0.88 } });
         map.addLayer({ id: `prog-${src}-line`, type: 'line', source: src, layout: { visibility: 'none' }, filter: ['in', ['get', 'cod'], ['literal', []]], paint: { 'line-color': '#D81E5B', 'line-width': src === 'mun-uf' ? 1.4 : 0.7 } });
       }
+      // área da Indicação Geográfica em foco, com a malha detalhada do estado (nítida no zoom)
+      map.addSource('ig-det', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({ id: 'ig-det-fill', type: 'fill', source: 'ig-det', paint: { 'fill-color': '#8A9136', 'fill-opacity': 0.92 } });
+      map.addLayer({ id: 'ig-det-line', type: 'line', source: 'ig-det', paint: { 'line-color': '#ffffff', 'line-width': 0.8, 'line-opacity': 0.9 } });
       map.addLayer({ id: 'mun-sel-line', type: 'line', source: 'mun-uf', filter: ['==', ['get', 'cod'], -1], paint: { 'line-color': '#232122', 'line-width': 2 } });
       map.addLayer({ id: 'uf-sel-line', type: 'line', source: 'ufs', filter: ['==', ['get', 'uf'], ''], paint: { 'line-color': '#232122', 'line-width': 1.6 } });
 
@@ -327,6 +335,81 @@ const Mapa = forwardRef(function Mapa(
       map.setFilter(`prog-${src}-dim`, ['!', filtro]);
     }
   }, [pronto, destaque, munUF, munBR]);
+
+  /* ------------------------------------------------ foco: zoom e marcador da Indicação Geográfica */
+  const focoRef = useRef({ marcador: null, raiz: null, camera: null, id: null });
+  useEffect(() => {
+    if (!pronto) return;
+    const map = mapRef.current;
+    const f = focoRef.current;
+    const foco = destaque?.foco;
+    const limpar = () => {
+      f.raiz?.unmount();
+      f.marcador?.remove();
+      f.marcador = null;
+      f.raiz = null;
+    };
+    const det = map.getSource('ig-det');
+    if (!foco) {
+      limpar();
+      det?.setData({ type: 'FeatureCollection', features: [] });
+      if (f.camera) {
+        map.easeTo({ ...f.camera, duration: 900 });
+        f.camera = null;
+      }
+      f.id = null;
+      return;
+    }
+    if (f.id === destaque.id) return;
+    f.id = destaque.id;
+    limpar();
+    det?.setData({ type: 'FeatureCollection', features: [] });
+    const cods = new Set(destaque.cods);
+    const idAtual = destaque.id;
+    Promise.all((foco.ufs || []).map((u) => fetch(geo(`municipios/${u}.json`)).then((r) => r.json()).catch(() => null))).then((arqs) => {
+      if (focoRef.current.id !== idAtual) return;
+      const features = arqs.filter(Boolean).flatMap((a) => a.features.filter((x) => cods.has(x.properties.cod)));
+      det?.setData({ type: 'FeatureCollection', features });
+    });
+    if (!f.camera) f.camera = { center: map.getCenter(), zoom: map.getZoom() };
+
+    // enquadramento: municípios da IG (ou os estados, se a IG não tiver a lista de municípios)
+    let b = null;
+    const somar = (x0, y0, x1, y1) => {
+      b = b ? [Math.min(b[0], x0), Math.min(b[1], y0), Math.max(b[2], x1), Math.max(b[3], y1)] : [x0, y0, x1, y1];
+    };
+    for (const [x, y] of foco.pontos) somar(x, y, x, y);
+    if (!b) for (const u of foco.ufs || []) if (centros?.[u]?.b) somar(...centros[u].b.flat());
+    if (!b) return;
+    const folga = 0.3; // graus: um município sozinho não vira um ponto colado na borda
+    const caixa = [
+      [b[0] - folga, b[1] - folga],
+      [b[2] + folga, b[3] + folga],
+    ];
+    // na visão Brasil a malha municipal é a simplificada: zoom até 7,5; dentro de um estado (malha detalhada), até 9
+    map.fitBounds(caixa, { padding: { ...pad(), top: pad().top + 90 }, maxZoom: uf ? 9 : 7.5, duration: 1200 });
+
+    // marcador: foto redonda da IG (ou o selo) e o nome
+    const centro = foco.pontos.length ? [foco.pontos.reduce((a, p) => a + p[0], 0) / foco.pontos.length, foco.pontos.reduce((a, p) => a + p[1], 0) / foco.pontos.length] : [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
+    // o MapLibre posiciona o elemento externo com transform; a animação fica no interno
+    const elem = document.createElement('div');
+    const interno = document.createElement('div');
+    interno.className = 'ig-marcador';
+    elem.appendChild(interno);
+    const raiz = createRoot(interno);
+    const foto = fotoIG(foco.numero);
+    raiz.render(
+      <>
+        <span className="ig-marcador__foto">{foto ? <img src={asset(foto)} alt="" /> : <KitSvg nome="Ativo_57" size={34} />}</span>
+        <span className="ig-marcador__nome">{foco.nome}</span>
+      </>,
+    );
+    f.raiz = raiz;
+    f.marcador = new maplibregl.Marker({ element: elem, anchor: 'bottom' }).setLngLat(centro).addTo(map);
+    elem.setAttribute('role', 'img');
+    elem.setAttribute('aria-label', `Indicação Geográfica ${foco.nome} (${foco.produto})`);
+    elem.style.pointerEvents = 'none';
+  }, [pronto, destaque, centros, uf]);
 
   /* ------------------------------------------------ Deck.gl: Sebrae, siglas e prancha */
   useEffect(() => {

@@ -225,7 +225,22 @@ export default function Observatorio() {
     if (programa.startsWith('ig:')) {
       carregarIGs().then(({ igs }) => {
         const ig = igs.find((x) => `ig:${x.id}` === programa);
-        if (vivo && ig) setDestaqueMapa({ id: programa, nome: `IG ${produtoCurto(ig.produto)} · ${ig.nome}`, cor: '#8A9136', real: true, cods: ig.municipios });
+        if (vivo && ig)
+          setDestaqueMapa({
+            id: programa,
+            nome: `IG ${produtoCurto(ig.produto)} · ${ig.nome}`,
+            cor: '#8A9136',
+            real: true,
+            cods: ig.municipios,
+            // foco no mapa: aproxima nos municípios da IG e mostra o marcador com a foto
+            foco: {
+              numero: ig.numero,
+              nome: ig.nome,
+              produto: produtoCurto(ig.produto),
+              pontos: ig.municipios.map((c) => base.porCod.get(c)).filter(Boolean).map((m) => [m.lon, m.lat]),
+              ufs: ig.ufs,
+            },
+          });
       });
       setCamadas((c) => (c.municipais ? c : { ...c, municipais: true }));
       return () => {
