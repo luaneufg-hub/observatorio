@@ -401,7 +401,7 @@ const Mapa = forwardRef(function Mapa(
     raiz.render(
       <>
         <span className="ig-marcador__foto">{foto ? <img src={asset(foto)} alt="" /> : <KitSvg nome="Ativo_57" size={34} />}</span>
-        <span className="ig-marcador__nome">{foco.nome}</span>
+        <span className="ig-marcador__nome">{foco.produto}</span>
       </>,
     );
     f.raiz = raiz;
