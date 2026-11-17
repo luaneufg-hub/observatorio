@@ -116,8 +116,31 @@ const Mapa = forwardRef(function Mapa(
       };
       listras('hachura', 'rgba(20,20,24,0.6)');
       listras('hachura-clara', 'rgba(255,255,255,0.85)');
-      // destaques setoriais: listras tom sobre tom, na cor definida para cada setor
-      for (const st of SETORES_DESTAQUE) listras(`hachura-${st.id}`, st.hachura);
+      // destaques setoriais: hachura cruzada tom sobre tom, na cor definida para cada setor.
+      // A trama aparece mais que a listra simples sem precisar de mais contraste, e não compete com as
+      // divisas dos municípios (linhas soltas). Desenhada em 2x para ficar nítida em telas de alta densidade.
+      const cruzada = (nome, cor) => {
+        const n = 10; // lado do ladrilho, em px de tela
+        const k = 2; // densidade de pixels
+        const c = document.createElement('canvas');
+        c.width = c.height = n * k;
+        const g = c.getContext('2d');
+        g.scale(k, k);
+        g.strokeStyle = cor;
+        g.lineWidth = 1.1;
+        g.beginPath();
+        // "/" e "\" com os cantos repetidos, para o ladrilho emendar sem costura
+        for (const [x1, y1, x2, y2] of [
+          [0, n, n, 0], [-2, 2, 2, -2], [n - 2, n + 2, n + 2, n - 2],
+          [0, 0, n, n], [-2, n - 2, 2, n + 2], [n - 2, -2, n + 2, 2],
+        ]) {
+          g.moveTo(x1, y1);
+          g.lineTo(x2, y2);
+        }
+        g.stroke();
+        map.addImage(nome, { width: n * k, height: n * k, data: g.getImageData(0, 0, n * k, n * k).data }, { pixelRatio: k });
+      };
+      for (const st of SETORES_DESTAQUE) cruzada(`hachura-${st.id}`, st.hachura);
 
       map.addSource('ufs', { type: 'geojson', data: geo('ufs.json'), promoteId: 'cod' });
       map.addSource('mun-br', { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, promoteId: 'cod', tolerance: 0.6 });

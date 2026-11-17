@@ -124,13 +124,13 @@ function Carimbo({ titulo, itens, folha, lugar, nota }) {
         {itens.map((it, i) => (
           <li key={i} className="flex items-center gap-2">
             {it.amostras ? (
-              // concentração forte: um pedaço por setor, com as listras na cor do setor, como no mapa
+              // concentração forte: um pedaço por setor, com a hachura cruzada na cor do setor, como no mapa
               <span className="flex h-2.5 w-5 flex-none">
                 {it.amostras.map((a, j) => (
                   <span
                     key={j}
                     className="h-full flex-1"
-                    style={{ backgroundColor: a.cor, backgroundImage: `repeating-linear-gradient(45deg, ${a.listra} 0 1px, transparent 1px 4px)` }}
+                    style={{ backgroundColor: a.cor, backgroundImage: `repeating-linear-gradient(45deg, ${a.listra} 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, ${a.listra} 0 1px, transparent 1px 4px)` }}
                   />
                 ))}
               </span>
