@@ -11,7 +11,7 @@ import { BIOMAS, BIOMA_BY_ID } from '@/lib/dados/biomas';
 import { GRUPOS, INDICADOR_BY_ID, DADOS, formatar, SETORES, quocienteLocacional, ATUALIZADO_EM, ehReal } from '@/lib/dados/indicadores';
 import { carregarMunicipios, valoresMunicipais } from '@/lib/dados/municipios';
 import { metricasUF, metricasMunicipio } from '@/lib/dados/metricas';
-import { classes, corDe, corDoRotulo, DIM, PRANCHA, BASE, escurecer } from '@/lib/escalas';
+import { classes, corDe, corDoRotulo, DIM, PRANCHA, BASE, escurecer, hachuraClara } from '@/lib/escalas';
 import { geo } from '@/lib/geo';
 import MicroPequenas from './diagnostico/MicroPequenas';
 import SebraeTerritorio from './SebraeTerritorio';
@@ -203,14 +203,14 @@ export default function Observatorio() {
     if (emDestaques)
       return [
         ...SETORES_DESTAQUE.map((s) => ({ cor: s.cor, rotulo: s.rotulo })),
-        { cor: '#E9E5DD', hachura: true, rotulo: `concentração forte (QL ≥ ${String(QL_FORTE).replace('.', ',')})` },
+        { cor: '#E9E5DD', corEscura: '#3D824F', hachura: true, rotulo: `concentração forte (QL ≥ ${String(QL_FORTE).replace('.', ',')})` },
       ];
     const c = munBR || munUF ? classesMun : classesUF;
     if (!c) return [];
     if (c.tipo === 'cat') return BIOMAS.map((b) => ({ cor: c.cores[b.id], rotulo: b.nome }));
-    if (ind.biomaId) return c.cores.slice(1).map((cor, i) => ({ cor, rotulo: c.rotulos[i], hachura: modo === 'destaques' && i === 3 }));
+    if (ind.biomaId) return c.cores.slice(1).map((cor, i) => ({ cor, rotulo: c.rotulos[i], hachura: modo === 'destaques' && i === 3, hachuraClara: hachuraClara(cor) }));
     const ext = [c.min, ...c.limites, c.max];
-    return c.cores.map((cor, i) => ({ cor, rotulo: `${formatar(ind, ext[i], { curto: true })} – ${formatar(ind, ext[i + 1], { curto: true })}`, hachura: modo === 'destaques' && i === 4 }));
+    return c.cores.map((cor, i) => ({ cor, rotulo: `${formatar(ind, ext[i], { curto: true })} – ${formatar(ind, ext[i + 1], { curto: true })}`, hachura: modo === 'destaques' && i === 4, hachuraClara: hachuraClara(cor) }));
   }, [classesUF, classesMun, munBR, munUF, ind, modo, emDestaques]);
 
   /* ---------------------------------------------------- destaques (prancha) */

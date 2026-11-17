@@ -4,7 +4,11 @@
 // círculo de foco (ScatterplotLayer). A caixa do lugar fica só na barra lateral.
 import { PathLayer, TextLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
+
 import { PRANCHA, hexParaRgb } from '@/lib/escalas';
+
+const LISTRAS_ESCURAS = 'repeating-linear-gradient(45deg, rgba(20,20,24,.6) 0 1px, transparent 1px 4px)';
+const LISTRAS_CLARAS = 'repeating-linear-gradient(45deg, rgba(255,255,255,.85) 0 1px, transparent 1px 4px)';
 
 const COR = hexParaRgb(PRANCHA.escura);
 const BRASIL = [-74.2, -33.9, -34.6, 5.4];
@@ -119,13 +123,21 @@ function Carimbo({ titulo, itens, folha, lugar, nota }) {
       <ul className="grid gap-[3px] tabular-nums">
         {itens.map((it, i) => (
           <li key={i} className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-5 flex-none"
-              style={{
-                backgroundColor: it.cor,
-                backgroundImage: it.hachura ? 'repeating-linear-gradient(45deg, rgba(20,20,24,.6) 0 1px, transparent 1px 4px)' : undefined,
-              }}
-            />
+            {it.corEscura ? (
+              // hachura escura em fundo claro e branca em fundo escuro, como no mapa
+              <span className="flex h-2.5 w-5 flex-none">
+                <span className="h-full w-1/2" style={{ backgroundColor: it.cor, backgroundImage: LISTRAS_ESCURAS }} />
+                <span className="h-full w-1/2" style={{ backgroundColor: it.corEscura, backgroundImage: LISTRAS_CLARAS }} />
+              </span>
+            ) : (
+              <span
+                className="h-2.5 w-5 flex-none"
+                style={{
+                  backgroundColor: it.cor,
+                  backgroundImage: it.hachura ? (it.hachuraClara ? LISTRAS_CLARAS : LISTRAS_ESCURAS) : undefined,
+                }}
+              />
+            )}
             {it.rotulo}
           </li>
         ))}

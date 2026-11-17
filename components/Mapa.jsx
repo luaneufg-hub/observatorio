@@ -96,21 +96,25 @@ const Mapa = forwardRef(function Mapa(
     );
 
     map.on('load', () => {
-      // hachura (prancha): diagonal 45°
-      const c = document.createElement('canvas');
-      c.width = c.height = 8;
-      const g = c.getContext('2d');
-      g.strokeStyle = 'rgba(20,20,24,0.6)';
-      g.lineWidth = 1.1;
-      g.beginPath();
-      g.moveTo(0, 8);
-      g.lineTo(8, 0);
-      g.moveTo(-2, 2);
-      g.lineTo(2, -2);
-      g.moveTo(6, 10);
-      g.lineTo(10, 6);
-      g.stroke();
-      map.addImage('hachura', { width: 8, height: 8, data: g.getImageData(0, 0, 8, 8).data });
+      // hachura (prancha): diagonal 45°, em duas versões — listras escuras e brancas (para fundos escuros)
+      const listras = (nome, cor) => {
+        const c = document.createElement('canvas');
+        c.width = c.height = 8;
+        const g = c.getContext('2d');
+        g.strokeStyle = cor;
+        g.lineWidth = 1.1;
+        g.beginPath();
+        g.moveTo(0, 8);
+        g.lineTo(8, 0);
+        g.moveTo(-2, 2);
+        g.lineTo(2, -2);
+        g.moveTo(6, 10);
+        g.lineTo(10, 6);
+        g.stroke();
+        map.addImage(nome, { width: 8, height: 8, data: g.getImageData(0, 0, 8, 8).data });
+      };
+      listras('hachura', 'rgba(20,20,24,0.6)');
+      listras('hachura-clara', 'rgba(255,255,255,0.85)');
 
       map.addSource('ufs', { type: 'geojson', data: geo('ufs.json'), promoteId: 'cod' });
       map.addSource('mun-br', { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, promoteId: 'cod', tolerance: 0.6 });
@@ -123,14 +127,23 @@ const Mapa = forwardRef(function Mapa(
         source: src,
         paint: { 'fill-color': '#4A4542', 'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.16, 0] },
       });
-      const hach = (src) => ({ id: `${src}-hachura`, type: 'fill', source: src, layout: { visibility: 'none' }, paint: { 'fill-pattern': 'hachura', 'fill-opacity': 0 } });
+      const hach = (src, clara) => ({
+        id: `${src}-hachura${clara ? '-clara' : ''}`,
+        type: 'fill',
+        source: src,
+        layout: { visibility: 'none' },
+        paint: { 'fill-pattern': clara ? 'hachura-clara' : 'hachura', 'fill-opacity': 0 },
+      });
 
       map.addLayer({ id: 'ufs-fill', type: 'fill', source: 'ufs', paint: { 'fill-color': BASE } });
       map.addLayer(hach('ufs'));
+      map.addLayer(hach('ufs', true));
       map.addLayer({ id: 'mun-br-fill', type: 'fill', source: 'mun-br', layout: { visibility: 'none' }, paint: { 'fill-color': BASE } });
       map.addLayer(hach('mun-br'));
+      map.addLayer(hach('mun-br', true));
       map.addLayer({ id: 'mun-uf-fill', type: 'fill', source: 'mun-uf', layout: { visibility: 'none' }, paint: { 'fill-color': BASE } });
       map.addLayer(hach('mun-uf'));
+      map.addLayer(hach('mun-uf', true));
       map.addLayer(hover('ufs'));
       map.addLayer(hover('mun-br'));
       map.addLayer(hover('mun-uf'));
@@ -299,15 +312,19 @@ const Mapa = forwardRef(function Mapa(
     vis('mun-uf-hover', munUF);
     vis('mun-sel-line', munUF);
 
-    // hachura no quintil superior (prancha)
-    vis('ufs-hachura', prancha && !munBR && !munUF);
-    vis('mun-br-hachura', prancha && munBR);
-    vis('mun-uf-hachura', prancha && munUF);
-    if (prancha) {
-      if (classesUF) map.setPaintProperty('ufs-hachura', 'fill-opacity', expressaoHachura(classesUF));
-      if (classesMun) {
-        map.setPaintProperty('mun-br-hachura', 'fill-opacity', expressaoHachura(classesMun));
-        map.setPaintProperty('mun-uf-hachura', 'fill-opacity', expressaoHachura(classesMun));
+    // hachura no quintil superior (prancha): escura ou branca, conforme o contraste com o preenchimento
+    const opacidade = camadas.sebrae || camadas.bioma ? 0.55 : 1;
+    for (const sufixo of ['', '-clara']) {
+      const tom = sufixo ? 'clara' : 'escura';
+      vis(`ufs-hachura${sufixo}`, prancha && !munBR && !munUF);
+      vis(`mun-br-hachura${sufixo}`, prancha && munBR);
+      vis(`mun-uf-hachura${sufixo}`, prancha && munUF);
+      if (prancha) {
+        if (classesUF) map.setPaintProperty(`ufs-hachura${sufixo}`, 'fill-opacity', expressaoHachura(classesUF, tom, { opacidade }));
+        if (classesMun) {
+          map.setPaintProperty(`mun-br-hachura${sufixo}`, 'fill-opacity', expressaoHachura(classesMun, tom, { opacidade }));
+          map.setPaintProperty(`mun-uf-hachura${sufixo}`, 'fill-opacity', expressaoHachura(classesMun, tom, { opacidade }));
+        }
       }
     }
 
