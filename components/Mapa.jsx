@@ -127,7 +127,7 @@ const Mapa = forwardRef(function Mapa(
         const g = c.getContext('2d');
         g.scale(k, k);
         g.strokeStyle = cor;
-        g.lineWidth = 0.6; // fina, para não esconder as divisas dos estados no zoom afastado
+        g.lineWidth = 0.85; // fina, para não esconder as divisas dos estados no zoom afastado
         g.beginPath();
         // "/" e "\" com os cantos repetidos, para o ladrilho emendar sem costura
         for (const [x1, y1, x2, y2] of [
