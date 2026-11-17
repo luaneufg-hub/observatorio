@@ -529,7 +529,7 @@ const Mapa = forwardRef(function Mapa(
           getPosition: (d) => d.pos,
           radiusUnits: 'pixels',
           getRadius: (d) => (d.sede ? 5 : 3.5) + fase(d) * (d.sede ? 13 : 9),
-          getFillColor: (d) => [...(d.sede ? [42, 79, 218] : [255, 128, 200]), Math.round(110 * (1 - fase(d)))],
+          getFillColor: (d) => [...({ sede: [42, 79, 218], escritorio: [255, 128, 200], parceiro: [61, 130, 79] }[d.icone] || (d.sede ? [42, 79, 218] : [255, 128, 200])), Math.round(110 * (1 - fase(d)))],
           stroked: false,
           pickable: false,
           updateTriggers: { getRadius: tempo, getFillColor: tempo },
@@ -538,12 +538,12 @@ const Mapa = forwardRef(function Mapa(
       layers.push(
         new IconLayer({
           id: 'sebrae',
-          // sedes por último, para ficarem por cima dos escritórios
-          data: [...sebrae].sort((a, b) => a.sede - b.sede),
+          // já vem ordenado: parceiros por baixo, salas, agências por cima
+          data: sebrae,
           getPosition: (d) => d.pos,
           iconAtlas: pinos.atlas,
           iconMapping: pinos.mapping,
-          getIcon: (d) => (d.sede ? 'sede' : 'escritorio'),
+          getIcon: (d) => d.icone || (d.sede ? 'sede' : 'escritorio'),
           getSize: (d) => (d.sede ? ALTURA_SEDE : ALTURA_ESCRITORIO),
           sizeUnits: 'pixels',
           pickable: true,

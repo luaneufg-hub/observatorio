@@ -24,7 +24,7 @@ import Estudos from './estudos/Estudos';
 import CorteSecao from './CorteSecao';
 import Rodape from './Rodape';
 import SeletorTema from './SeletorTema';
-import { URL_SEDE, URL_ESCRITORIO } from '@/lib/icones/pinosSebrae';
+import { URL_SEDE, URL_ESCRITORIO, URL_PARCEIRO } from '@/lib/icones/pinosSebrae';
 import CalendarioDesktop from './calendario/CalendarioDesktop';
 import { carregarIGs, produtoCurto } from '@/lib/dados/ig';
 import { cadeiaBioma } from '@/lib/dados/producao';
@@ -167,16 +167,19 @@ export default function Observatorio() {
 
   /* ---------------------------------------------------- Sebrae: unidades de atendimento (Mapa de Unidades SAS) */
   // No Brasil, só as agências (pinos azuis); com um estado escolhido, todas as unidades dele: agências e as
-  // demais — Salas do Empreendedor, Espaços Sebrae e parcerias (pinos rosa) —, para o mapa não virar uma nuvem.
+  // demais — Salas do Empreendedor (rosa) e parceiros: Espaços Sebrae e parcerias (verde) —, para o mapa não virar uma nuvem.
   const sebrae = useMemo(() => {
     if (!base?.unidades?.length) return null;
     const out = [];
     for (const u of base.unidades) {
       const m = base.porCod.get(u.cod);
       if (!m || (uf ? m.uf !== uf : u.tipo !== 0)) continue;
-      out.push({ ...u, sede: u.tipo === 0, uf: m.uf, cidade: m.nome, rotuloTipo: base.unidadesTipos[u.tipo], fase: (out.length % 97) / 97 });
+      const icone = u.tipo === 0 ? 'sede' : u.tipo === 1 ? 'escritorio' : 'parceiro';
+      out.push({ ...u, sede: u.tipo === 0, icone, uf: m.uf, cidade: m.nome, rotuloTipo: base.unidadesTipos[u.tipo], fase: (out.length % 97) / 97 });
     }
-    return out;
+    // ordem de desenho: parceiros por baixo, depois as salas, agências por cima
+    const ordem = { parceiro: 0, escritorio: 1, sede: 2 };
+    return out.sort((a, b) => ordem[a.icone] - ordem[b.icone]);
   }, [base, uf]);
 
   /* ---------------------------------------------------- siglas das UFs (cor por contraste) */
@@ -617,7 +620,10 @@ export default function Observatorio() {
                     <img src={URL_SEDE} alt="" className="h-[22px] w-auto" /> Agência
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <img src={URL_ESCRITORIO} alt="" className="h-[16px] w-auto" /> Salas e parceiros
+                    <img src={URL_ESCRITORIO} alt="" className="h-[16px] w-auto" /> Sala do Empreendedor
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <img src={URL_PARCEIRO} alt="" className="h-[16px] w-auto" /> Parceiros
                   </span>
                   {!uf && <span className="w-full text-[10.5px] italic text-cinza">salas e parceiros aparecem ao escolher um estado</span>}
                 </div>
