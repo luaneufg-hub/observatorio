@@ -203,7 +203,7 @@ export default function Observatorio() {
     if (emDestaques)
       return [
         ...SETORES_DESTAQUE.map((s) => ({ cor: s.cor, rotulo: s.rotulo })),
-        { cor: '#E9E5DD', corEscura: '#44442A', hachura: true, rotulo: `concentração forte (QL ≥ ${String(QL_FORTE).replace('.', ',')})` },
+        { amostras: SETORES_DESTAQUE.map((s) => ({ cor: s.cor, listra: s.hachura })), rotulo: `concentração forte (QL ≥ ${String(QL_FORTE).replace('.', ',')})` },
       ];
     const c = munBR || munUF ? classesMun : classesUF;
     if (!c) return [];

@@ -19,7 +19,8 @@ import { ScatterplotLayer, TextLayer, PathLayer, IconLayer } from '@deck.gl/laye
 import { ALTURA_SEDE, ALTURA_ESCRITORIO, atlasPinos } from '@/lib/icones/pinosSebrae';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { BIOMAS } from '@/lib/dados/biomas';
-import { BASE, DIM, PRANCHA, expressaoCor, expressaoHachura, hexParaRgb } from '@/lib/escalas';
+import { BASE, DIM, PRANCHA, expressaoCor, expressaoHachura, expressaoHachuraSetor, hexParaRgb } from '@/lib/escalas';
+import { SETORES_DESTAQUE } from '@/lib/dados/destaques';
 import { geo } from '@/lib/geo';
 
 const BRASIL = [
@@ -115,6 +116,8 @@ const Mapa = forwardRef(function Mapa(
       };
       listras('hachura', 'rgba(20,20,24,0.6)');
       listras('hachura-clara', 'rgba(255,255,255,0.85)');
+      // destaques setoriais: listras tom sobre tom, na cor definida para cada setor
+      for (const st of SETORES_DESTAQUE) listras(`hachura-${st.id}`, st.hachura);
 
       map.addSource('ufs', { type: 'geojson', data: geo('ufs.json'), promoteId: 'cod' });
       map.addSource('mun-br', { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, promoteId: 'cod', tolerance: 0.6 });
@@ -127,23 +130,24 @@ const Mapa = forwardRef(function Mapa(
         source: src,
         paint: { 'fill-color': '#4A4542', 'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.16, 0] },
       });
-      const hach = (src, clara) => ({
-        id: `${src}-hachura${clara ? '-clara' : ''}`,
+      // sufixo '' = listras escuras, 'clara' = brancas, ou o id de um setor (listras na cor do setor)
+      const hach = (src, sufixo = '') => ({
+        id: `${src}-hachura${sufixo ? `-${sufixo}` : ''}`,
         type: 'fill',
         source: src,
         layout: { visibility: 'none' },
-        paint: { 'fill-pattern': clara ? 'hachura-clara' : 'hachura', 'fill-opacity': 0 },
+        paint: { 'fill-pattern': sufixo ? `hachura-${sufixo}` : 'hachura', 'fill-opacity': 0 },
       });
 
       map.addLayer({ id: 'ufs-fill', type: 'fill', source: 'ufs', paint: { 'fill-color': BASE } });
       map.addLayer(hach('ufs'));
-      map.addLayer(hach('ufs', true));
+      for (const suf of ['clara', ...SETORES_DESTAQUE.map((st) => st.id)]) map.addLayer(hach('ufs', suf));
       map.addLayer({ id: 'mun-br-fill', type: 'fill', source: 'mun-br', layout: { visibility: 'none' }, paint: { 'fill-color': BASE } });
       map.addLayer(hach('mun-br'));
-      map.addLayer(hach('mun-br', true));
+      for (const suf of ['clara', ...SETORES_DESTAQUE.map((st) => st.id)]) map.addLayer(hach('mun-br', suf));
       map.addLayer({ id: 'mun-uf-fill', type: 'fill', source: 'mun-uf', layout: { visibility: 'none' }, paint: { 'fill-color': BASE } });
       map.addLayer(hach('mun-uf'));
-      map.addLayer(hach('mun-uf', true));
+      for (const suf of ['clara', ...SETORES_DESTAQUE.map((st) => st.id)]) map.addLayer(hach('mun-uf', suf));
       map.addLayer(hover('ufs'));
       map.addLayer(hover('mun-br'));
       map.addLayer(hover('mun-uf'));
@@ -325,6 +329,17 @@ const Mapa = forwardRef(function Mapa(
           map.setPaintProperty(`mun-br-hachura${sufixo}`, 'fill-opacity', expressaoHachura(classesMun, tom, { opacidade }));
           map.setPaintProperty(`mun-uf-hachura${sufixo}`, 'fill-opacity', expressaoHachura(classesMun, tom, { opacidade }));
         }
+      }
+    }
+    // destaques setoriais: uma camada de hachura por setor, cada uma com as listras na cor do setor
+    for (const { id } of SETORES_DESTAQUE) {
+      vis(`ufs-hachura-${id}`, prancha && !munBR && !munUF);
+      vis(`mun-br-hachura-${id}`, prancha && munBR);
+      vis(`mun-uf-hachura-${id}`, prancha && munUF);
+      if (prancha) {
+        map.setPaintProperty(`ufs-hachura-${id}`, 'fill-opacity', expressaoHachuraSetor(classesUF, id));
+        map.setPaintProperty(`mun-br-hachura-${id}`, 'fill-opacity', expressaoHachuraSetor(classesMun, id));
+        map.setPaintProperty(`mun-uf-hachura-${id}`, 'fill-opacity', expressaoHachuraSetor(classesMun, id));
       }
     }
 
