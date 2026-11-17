@@ -5,33 +5,63 @@
 import { PathLayer, TextLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
 
-import { PRANCHA, corSeletor, hexParaRgb } from '@/lib/escalas';
+import { PRANCHA, hexParaRgb } from '@/lib/escalas';
 
 const LISTRAS_ESCURAS = 'repeating-linear-gradient(45deg, rgba(20,20,24,.6) 0 1px, transparent 1px 4px)';
 const LISTRAS_CLARAS = 'repeating-linear-gradient(45deg, rgba(255,255,255,.85) 0 1px, transparent 1px 4px)';
+const TRAMA = 'repeating-linear-gradient(45deg, rgba(20,20,24,.7) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(20,20,24,.7) 0 1px, transparent 1px 4px)';
 
 const BRASIL = [-74.2, -33.9, -34.6, 5.4];
 
 export function construirPrancha({ foco, carimbo }) {
-  // foco: { bbox:[x0,y0,x1,y1], centro:[lon,lat], fundo?: cor do lugar, municipio?: bool } | null (Brasil)
-  // O círculo fica sempre sobre o lugar, então segue a cor dele. No município, o zoom é grande e o quadro e as
-  // letras também caem sobre o lugar; no estado, eles ficam fora, sobre o fundo claro, e continuam em rosa.
-  const COR_CIRCULO = hexParaRgb(corSeletor(foco?.fundo));
-  const COR = foco?.municipio ? COR_CIRCULO : hexParaRgb(PRANCHA.escura);
+  // foco: { bbox:[x0,y0,x1,y1], centro:[lon,lat] } | null (Brasil)
+  // Com um lugar selecionado, o seletor inteiro (quadro, cruzetas, N/S/L/O, círculo) fica amarelo, com um
+  // contorno escuro fino: o amarelo se destaca sobre o laranja e os tons escuros, e o contorno garante a
+  // leitura sobre o fundo claro e os tons claros. Sem seleção (Brasil), fica no rosa da prancha.
+  const amarelo = !!foco;
+  const COR = hexParaRgb(amarelo ? PRANCHA.amarelo : PRANCHA.escura);
+  const HALO = [20, 20, 24, 120];
   const [x0, y0, x1, y1] = foco?.bbox || BRASIL;
   const px = (x1 - x0) * (foco ? 0.12 : 0.02);
   const py = (y1 - y0) * (foco ? 0.12 : 0.02);
   const a = [x0 - px, y0 - py, x1 + px, y1 + py];
   const cx = (a[0] + a[2]) / 2;
   const cy = (a[1] + a[3]) / 2;
+  const quadro = [{ path: [[a[0], a[1]], [a[2], a[1]], [a[2], a[3]], [a[0], a[3]], [a[0], a[1]]] }];
+  // o tracejado do deck.gl é medido em larguras de linha: o contorno (3,6 px) usa traços de 11,8 px e
+  // vãos de 5 px, o mesmo período (16,8 px) do traço amarelo (1,4 px × [7, 5]), para os dois andarem juntos
+  const L = 1.4;
+  const LH = 3.6;
+  const texto = (extra) => ({
+    fontSettings: { sdf: true },
+    outlineWidth: amarelo ? 4 : 0,
+    outlineColor: HALO,
+    getAlignmentBaseline: 'center',
+    ...extra,
+  });
 
   const camadasDeck = [
+    ...(amarelo
+      ? [
+          new PathLayer({
+            id: 'pr-quadro-halo',
+            data: quadro,
+            getPath: (d) => d.path,
+            getColor: HALO,
+            getWidth: LH,
+            widthUnits: 'pixels',
+            getDashArray: [(7 * L + 2) / LH, (5 * L - 2) / LH],
+            dashJustified: true,
+            extensions: [new PathStyleExtension({ dash: true })],
+          }),
+        ]
+      : []),
     new PathLayer({
       id: 'pr-quadro',
-      data: [{ path: [[a[0], a[1]], [a[2], a[1]], [a[2], a[3]], [a[0], a[3]], [a[0], a[1]]] }],
+      data: quadro,
       getPath: (d) => d.path,
       getColor: COR,
-      getWidth: 1.4,
+      getWidth: L,
       widthUnits: 'pixels',
       getDashArray: [7, 5],
       dashJustified: true,
@@ -46,7 +76,7 @@ export function construirPrancha({ foco, carimbo }) {
       getColor: COR,
       fontFamily: 'Lato, Inter, sans-serif',
       fontWeight: 400,
-      getAlignmentBaseline: 'center',
+      ...texto(),
     }),
     new TextLayer({
       id: 'pr-cardeais',
@@ -63,11 +93,23 @@ export function construirPrancha({ foco, carimbo }) {
       getColor: COR,
       fontFamily: 'proxima-nova, Inter, sans-serif',
       fontWeight: 800,
-      getAlignmentBaseline: 'center',
+      ...texto(),
     }),
   ];
   if (foco?.centro) {
     camadasDeck.push(
+      new ScatterplotLayer({
+        id: 'pr-circulo-halo',
+        data: [foco.centro],
+        getPosition: (d) => d,
+        getRadius: 44,
+        radiusUnits: 'pixels',
+        stroked: true,
+        filled: false,
+        getLineColor: HALO,
+        getLineWidth: 3.5,
+        lineWidthUnits: 'pixels',
+      }),
       new ScatterplotLayer({
         id: 'pr-circulo',
         data: [foco.centro],
@@ -76,7 +118,7 @@ export function construirPrancha({ foco, carimbo }) {
         radiusUnits: 'pixels',
         stroked: true,
         filled: false,
-        getLineColor: COR_CIRCULO,
+        getLineColor: COR,
         getLineWidth: 1.5,
         lineWidthUnits: 'pixels',
       }),
@@ -86,10 +128,10 @@ export function construirPrancha({ foco, carimbo }) {
         getPosition: (d) => d,
         getRadius: 5,
         radiusUnits: 'pixels',
-        getFillColor: COR_CIRCULO,
+        getFillColor: COR,
         stroked: true,
-        getLineColor: [255, 255, 255],
-        getLineWidth: 2,
+        getLineColor: [30, 30, 34],
+        getLineWidth: 1.5,
         lineWidthUnits: 'pixels',
       }),
     );
@@ -126,26 +168,14 @@ function Carimbo({ titulo, itens, folha, lugar, nota }) {
       <ul className="grid gap-[3px] tabular-nums">
         {itens.map((it, i) => (
           <li key={i} className="flex items-center gap-2">
-            {it.amostras ? (
-              // concentração forte: um pedaço por setor, com a hachura cruzada na cor do setor, como no mapa
-              <span className="flex h-2.5 w-5 flex-none">
-                {it.amostras.map((a, j) => (
-                  <span
-                    key={j}
-                    className="h-full flex-1"
-                    style={{ backgroundColor: a.cor, backgroundImage: `repeating-linear-gradient(45deg, ${a.listra} 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, ${a.listra} 0 1px, transparent 1px 4px)` }}
-                  />
-                ))}
-              </span>
-            ) : (
-              <span
-                className="h-2.5 w-5 flex-none"
-                style={{
-                  backgroundColor: it.cor,
-                  backgroundImage: it.hachura ? (it.hachuraClara ? LISTRAS_CLARAS : LISTRAS_ESCURAS) : undefined,
-                }}
-              />
-            )}
+            <span
+              className="h-2.5 w-5 flex-none"
+              style={{
+                backgroundColor: it.cor,
+                // concentração forte (setores): só a trama cruzada, sem cor de fundo, para ser reconhecida em qualquer setor
+                backgroundImage: it.cruzada ? TRAMA : it.hachura ? (it.hachuraClara ? LISTRAS_CLARAS : LISTRAS_ESCURAS) : undefined,
+              }}
+            />
             {it.rotulo}
           </li>
         ))}

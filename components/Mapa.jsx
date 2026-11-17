@@ -120,14 +120,14 @@ const Mapa = forwardRef(function Mapa(
       // A trama aparece mais que a listra simples sem precisar de mais contraste, e não compete com as
       // divisas dos municípios (linhas soltas). Desenhada em 2x para ficar nítida em telas de alta densidade.
       const cruzada = (nome, cor) => {
-        const n = 10; // lado do ladrilho, em px de tela
+        const n = 8; // lado do ladrilho, em px de tela
         const k = 2; // densidade de pixels
         const c = document.createElement('canvas');
         c.width = c.height = n * k;
         const g = c.getContext('2d');
         g.scale(k, k);
         g.strokeStyle = cor;
-        g.lineWidth = 1.1;
+        g.lineWidth = 0.6; // fina, para não esconder as divisas dos estados no zoom afastado
         g.beginPath();
         // "/" e "\" com os cantos repetidos, para o ladrilho emendar sem costura
         for (const [x1, y1, x2, y2] of [
@@ -203,6 +203,10 @@ const Mapa = forwardRef(function Mapa(
       map.addLayer({ id: 'ig-det-line', type: 'line', source: 'ig-det', paint: { 'line-color': '#ffffff', 'line-width': 0.8, 'line-opacity': 0.9 } });
       map.addLayer({ id: 'mun-sel-line', type: 'line', source: 'mun-uf', filter: ['==', ['get', 'cod'], -1], paint: { 'line-color': '#232122', 'line-width': 2 } });
       map.addLayer({ id: 'uf-sel-line', type: 'line', source: 'ufs', filter: ['==', ['get', 'uf'], ''], paint: { 'line-color': '#232122', 'line-width': 1.6 } });
+      // destaques: o contorno da seleção fica amarelo, como o seletor da prancha, sobre o contorno escuro
+      // (que vira um filete de contraste por baixo)
+      map.addLayer({ id: 'mun-sel-amarelo', type: 'line', source: 'mun-uf', layout: { visibility: 'none' }, filter: ['==', ['get', 'cod'], -1], paint: { 'line-color': PRANCHA.amarelo, 'line-width': 2 } });
+      map.addLayer({ id: 'uf-sel-amarelo', type: 'line', source: 'ufs', layout: { visibility: 'none' }, filter: ['==', ['get', 'uf'], ''], paint: { 'line-color': PRANCHA.amarelo, 'line-width': 1.8 } });
 
       const deck = new MapboxOverlay({ interleaved: false, layers: [] });
       map.addControl(deck);
@@ -372,6 +376,14 @@ const Mapa = forwardRef(function Mapa(
     vis('biomas-line', camadas.bioma);
     map.setFilter('uf-sel-line', ['==', ['get', 'uf'], uf && !munUF ? uf : '']);
     map.setFilter('mun-sel-line', ['==', ['get', 'cod'], municipio ?? -1]);
+    map.setFilter('uf-sel-amarelo', ['==', ['get', 'uf'], uf && !munUF ? uf : '']);
+    map.setFilter('mun-sel-amarelo', ['==', ['get', 'cod'], municipio ?? -1]);
+    vis('uf-sel-amarelo', prancha);
+    vis('mun-sel-amarelo', prancha && munUF);
+    map.setPaintProperty('uf-sel-line', 'line-width', prancha ? 4.2 : 1.6);
+    map.setPaintProperty('mun-sel-line', 'line-width', prancha ? 4.5 : 2);
+    map.setPaintProperty('uf-sel-line', 'line-color', prancha ? 'rgba(20,20,24,0.55)' : '#232122');
+    map.setPaintProperty('mun-sel-line', 'line-color', prancha ? 'rgba(20,20,24,0.55)' : '#232122');
   }, [pronto, modo, uf, municipio, camadas, classesUF, classesMun, munBR, munUF]);
 
   /* ------------------------------------------------ transparência: com pinos do Sebrae ou biomas ligados,
@@ -555,7 +567,10 @@ const Mapa = forwardRef(function Mapa(
           characterSet: 'auto',
           getTextAnchor: 'middle',
           getAlignmentBaseline: 'center',
-          fontSettings: { sdf: false },
+          // contorno escuro só quando a sigla é branca sobre o mapa todo colorido (Brasil por município)
+          fontSettings: { sdf: true },
+          outlineWidth: rotulosUF.some((d) => d.halo) ? 3 : 0,
+          outlineColor: [20, 20, 24, 170],
         }),
       );
     }

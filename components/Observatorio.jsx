@@ -193,8 +193,10 @@ export default function Observatorio() {
         const vv = mapaValoresUF.get(u.sigla);
         fundo = corDe(mapaClassesUF, vv && typeof vv === 'object' ? vv.cat : vv);
       }
+      // Brasil por município: o mapa todo colorido, de muitas cores — sigla branca com contorno escuro
+      if (munBR) return { pos: centros[u.sigla].c, texto: u.sigla, cor: [255, 255, 255, 255], halo: true };
       const [r, g, b] = hexRgb(corDoRotulo(fundo));
-      return { pos: centros[u.sigla].c, texto: u.sigla, cor: [r, g, b, munBR || munUF ? 140 : 255] };
+      return { pos: centros[u.sigla].c, texto: u.sigla, cor: [r, g, b, munUF ? 140 : 255] };
     });
   }, [centros, munUF, munBR, uf, mapaClassesUF, mapaValoresUF, modo]);
 
@@ -203,7 +205,7 @@ export default function Observatorio() {
     if (emDestaques)
       return [
         ...SETORES_DESTAQUE.map((s) => ({ cor: s.cor, rotulo: s.rotulo })),
-        { amostras: SETORES_DESTAQUE.map((s) => ({ cor: s.cor, listra: s.hachura })), rotulo: `concentração forte (QL ≥ ${String(QL_FORTE).replace('.', ',')})` },
+        { cor: 'transparent', hachura: true, cruzada: true, rotulo: `concentração forte (QL ≥ ${String(QL_FORTE).replace('.', ',')})` },
       ];
     const c = munBR || munUF ? classesMun : classesUF;
     if (!c) return [];
@@ -274,10 +276,8 @@ export default function Observatorio() {
   const prancha = useMemo(() => {
     if (modo !== 'destaques' || !centros) return null;
     let foco = null;
-    // cor do lugar em foco (setor em destaque), para o seletor trocar de rosa para amarelo onde o rosa some
-    const corSetor = (d) => (d?.setor ? SETOR_DESTAQUE_BY_ID[d.setor]?.cor : null);
-    if (mSel) foco = { bbox: [mSel.lon - 0.35, mSel.lat - 0.3, mSel.lon + 0.35, mSel.lat + 0.3], centro: [mSel.lon, mSel.lat], municipio: true, fundo: emDestaques ? corSetor(destaquesMun?.get(mSel.cod)) : null };
-    else if (uf) foco = { bbox: centros[uf].b, centro: centros[uf].c, fundo: emDestaques ? corSetor(DESTAQUES_UF.get(uf)) : null };
+    if (mSel) foco = { bbox: [mSel.lon - 0.35, mSel.lat - 0.3, mSel.lon + 0.35, mSel.lat + 0.3], centro: [mSel.lon, mSel.lat] };
+    else if (uf) foco = { bbox: centros[uf].b, centro: centros[uf].c };
     return construirPrancha({
       foco,
       carimbo: {
@@ -288,7 +288,7 @@ export default function Observatorio() {
         lugar: mSel ? `${mSel.nome}, ${mSel.uf}` : uf ? UF_BY_SIGLA[uf].nome : 'Brasil',
       },
     });
-  }, [modo, centros, mSel, uf, ind, legenda, munBR, munUF, base, emDestaques, destaquesMun]);
+  }, [modo, centros, mSel, uf, ind, legenda, munBR, munUF, base]);
 
   /* ---------------------------------------------------- hover */
   const hoverInfo = useMemo(() => {
