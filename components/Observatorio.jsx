@@ -8,7 +8,7 @@ import { Busca, Camadas, DropdownIndicadores, DropdownUF } from './Controles';
 import { construirPrancha } from './Prancha';
 import { UFS, UF_BY_SIGLA, REGIOES } from '@/lib/dados/ufs';
 import { BIOMAS, BIOMA_BY_ID } from '@/lib/dados/biomas';
-import { GRUPOS, INDICADOR_BY_ID, DADOS, formatar, SETORES, quocienteLocacional, ATUALIZADO_EM, ehReal } from '@/lib/dados/indicadores';
+import { GRUPOS, INDICADOR_BY_ID, DADOS, formatar, SETORES, quocienteLocacional, ATUALIZADO_EM, ehReal, tituloRanking } from '@/lib/dados/indicadores';
 import { carregarMunicipios, valoresMunicipais } from '@/lib/dados/municipios';
 import { metricasUF, metricasMunicipio } from '@/lib/dados/metricas';
 import { classes, corDe, corDoRotulo, DIM, PRANCHA, BASE, escurecer, hachuraClara } from '@/lib/escalas';
@@ -451,8 +451,9 @@ export default function Observatorio() {
             {!categorico && (
               <Card
                 icone="setores"
-                rotulo={uf ? `Maiores valores · municípios de ${uf}` : 'Maiores valores · UFs'}
-                info={uf ? 'Os cinco municípios da UF com os maiores valores do indicador selecionado. Clique para ver no mapa.' : 'As cinco UFs com os maiores valores do indicador selecionado. Clique para abrir a UF e ver os municípios.'}
+                rotulo={tituloRanking(ind, uf)}
+                quebrarRotulo
+                info={`${uf ? 'Os cinco municípios da UF' : 'As cinco UFs'} com ${ind.menorMelhor ? 'os menores' : 'os maiores'} valores do indicador selecionado. ${uf ? 'Clique para ver no mapa.' : 'Clique para abrir a UF e ver os municípios.'}`}
               >
                 <div className="mt-1">
                   {ranking.slice(0, 5).map((x, i) => (

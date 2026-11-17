@@ -44,7 +44,7 @@ export function InfoTip({ titulo, children, lado = 'direita', classeBotao }) {
   );
 }
 
-export default function Card({ icone, rotulo, info, infoTitulo, acao, className = '', children }) {
+export default function Card({ icone, rotulo, info, infoTitulo, acao, quebrarRotulo = false, className = '', children }) {
   return (
     <section className={`min-w-0 rounded-card border border-tema-linha bg-tema-card p-5 shadow-card ${className}`}>
       <header className="mb-2 flex items-center gap-2.5">
@@ -53,7 +53,7 @@ export default function Card({ icone, rotulo, info, infoTitulo, acao, className 
             <Icon name={icone} size={20} />
           </span>
         )}
-        <h3 className="min-w-0 flex-1 truncate text-rotulo text-tema-suave">{rotulo}</h3>
+        <h3 className={`min-w-0 flex-1 text-rotulo text-tema-suave ${quebrarRotulo ? 'leading-snug' : 'truncate'}`}>{rotulo}</h3>
         {acao}
         <InfoTip titulo={infoTitulo || rotulo}>{info}</InfoTip>
       </header>
