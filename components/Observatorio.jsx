@@ -73,6 +73,22 @@ export default function Observatorio() {
   const areaRef = useRef(null);
 
   const ind = INDICADOR_BY_ID[indicadorId];
+
+  // Pontos de atendimento: liga os pinos do Sebrae junto com o indicador. Se foi o indicador que ligou,
+  // desliga ao trocar de indicador; se a pessoa já tinha ligado a camada (ou mexeu nela), não mexe.
+  const sebraeAuto = useRef(false);
+  useEffect(() => {
+    if (indicadorId === 'pontos') {
+      setCamadas((c) => {
+        if (c.sebrae) return c;
+        sebraeAuto.current = true;
+        return { ...c, sebrae: true };
+      });
+    } else if (sebraeAuto.current) {
+      sebraeAuto.current = false;
+      setCamadas((c) => ({ ...c, sebrae: false }));
+    }
+  }, [indicadorId]);
   const grupo = GRUPOS.find((g) => g.id === ind.grupo);
   const categorico = ind.unidade === 'cat';
 
@@ -523,7 +539,13 @@ export default function Observatorio() {
 
             {/* Camadas */}
             <Card icone="filtros" rotulo="Camadas do mapa" info="Liga e desliga as camadas sobre o mapa. 'Indicadores municipais' colore os municípios com o indicador selecionado; ao escolher uma UF ele é ligado automaticamente.">
-              <Camadas camadas={camadas} onAlternar={(id) => setCamadas((c) => ({ ...c, [id]: !c[id] }))} />
+              <Camadas
+                camadas={camadas}
+                onAlternar={(id) => {
+                  if (id === 'sebrae') sebraeAuto.current = false;
+                  setCamadas((c) => ({ ...c, [id]: !c[id] }));
+                }}
+              />
             </Card>
           </div>
 
