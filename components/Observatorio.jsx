@@ -97,7 +97,7 @@ export default function Observatorio() {
   }, [base, uf]);
 
   const classesUF = useMemo(() => classes(ind, [...valoresUF.values()], modo), [ind, valoresUF, modo]);
-  const classesMun = useMemo(() => (valoresMun ? classes(ind, munVisiveis.map((m) => valoresMun.get(m.cod)), modo) : null), [ind, valoresMun, munVisiveis, modo]);
+  const classesMun = useMemo(() => (valoresMun ? classes(ind, munVisiveis.map((m) => valoresMun.get(m.cod)), modo, { nivel: 'mun' }) : null), [ind, valoresMun, munVisiveis, modo]);
 
   const munUF = camadas.municipais && !!uf;
   const munBR = camadas.municipais && !uf;
@@ -165,23 +165,19 @@ export default function Observatorio() {
     [base, uf, modo],
   );
 
-  /* ---------------------------------------------------- Sebrae (ilustrativo) */
+  /* ---------------------------------------------------- Sebrae: unidades de atendimento (Mapa de Unidades SAS) */
+  // No Brasil, só as agências (pinos azuis); com um estado escolhido, todas as unidades dele: agências e as
+  // demais — Salas do Empreendedor, Espaços Sebrae e parcerias (pinos rosa) —, para o mapa não virar uma nuvem.
   const sebrae = useMemo(() => {
-    if (!base) return null;
+    if (!base?.unidades?.length) return null;
     const out = [];
-    for (const u of UFS) {
-      const ms = base.porUF[u.sigla] || [];
-      const cap = ms.find((m) => m.cap);
-      if (cap) out.push({ id: `sede-${u.sigla}`, pos: [cap.lon, cap.lat], sede: true, nome: cap.nome, uf: u.sigla, fase: (cap.cod % 97) / 97 });
-      const k = Math.max(1, Math.round((DADOS[u.sigla].pontos - 1) / 5));
-      [...ms]
-        .filter((m) => !m.cap)
-        .sort((a, b) => base.peso.get(b.cod) - base.peso.get(a.cod))
-        .slice(0, k)
-        .forEach((m) => out.push({ id: `er-${m.cod}`, pos: [m.lon, m.lat], sede: false, nome: m.nome, uf: u.sigla, fase: (m.cod % 89) / 89 }));
+    for (const u of base.unidades) {
+      const m = base.porCod.get(u.cod);
+      if (!m || (uf ? m.uf !== uf : u.tipo !== 0)) continue;
+      out.push({ ...u, sede: u.tipo === 0, uf: m.uf, cidade: m.nome, rotuloTipo: base.unidadesTipos[u.tipo], fase: (out.length % 97) / 97 });
     }
     return out;
-  }, [base]);
+  }, [base, uf]);
 
   /* ---------------------------------------------------- siglas das UFs (cor por contraste) */
   const rotulosUF = useMemo(() => {
@@ -211,6 +207,7 @@ export default function Observatorio() {
     if (!c) return [];
     if (c.tipo === 'cat') return BIOMAS.map((b) => ({ cor: c.cores[b.id], rotulo: b.nome }));
     if (ind.biomaId) return c.cores.slice(1).map((cor, i) => ({ cor, rotulo: c.rotulos[i], hachura: modo === 'destaques' && i === 3, hachuraClara: hachuraClara(cor) }));
+    if (c.rotulos) return c.cores.map((cor, i) => ({ cor, rotulo: c.rotulos[i], hachura: modo === 'destaques' && i === 4, hachuraClara: hachuraClara(cor) }));
     const ext = [c.min, ...c.limites, c.max];
     return c.cores.map((cor, i) => ({ cor, rotulo: `${formatar(ind, ext[i], { curto: true })} – ${formatar(ind, ext[i + 1], { curto: true })}`, hachura: modo === 'destaques' && i === 4, hachuraClara: hachuraClara(cor) }));
   }, [classesUF, classesMun, munBR, munUF, ind, modo, emDestaques]);
@@ -615,13 +612,14 @@ export default function Observatorio() {
                 ))}
               </ul>
               {camadas.sebrae && (
-                <div className="mt-2 flex items-center gap-3 border-t border-[#efeae2] pt-2 text-[11.5px] text-[#2b2b30]">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[#efeae2] pt-2 text-[11.5px] text-[#2b2b30]">
                   <span className="inline-flex items-center gap-1.5">
-                    <img src={URL_SEDE} alt="" className="h-[22px] w-auto" /> Sede
+                    <img src={URL_SEDE} alt="" className="h-[22px] w-auto" /> Agência
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <img src={URL_ESCRITORIO} alt="" className="h-[16px] w-auto" /> Escritório
+                    <img src={URL_ESCRITORIO} alt="" className="h-[16px] w-auto" /> Salas e parceiros
                   </span>
+                  {!uf && <span className="w-full text-[10.5px] italic text-cinza">salas e parceiros aparecem ao escolher um estado</span>}
                 </div>
               )}
             </div>
@@ -665,12 +663,13 @@ function CaixaHover({ info, ind, valorTexto, area }) {
     return (
       <div className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-[calc(100%+16px)] rounded-2xl bg-white px-4 py-3 shadow-flutuante" style={{ left, top: info.y, width: W }}>
         <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-azul">
-          <Icon name="sebrae" size={16} /> Sebrae · {o.sede ? 'sede estadual' : 'escritório regional'}
+          <Icon name="sebrae" size={16} /> {o.rotuloTipo}
         </div>
-        <div className="mt-1 font-display text-[17px] font-bold text-navy">
-          {o.nome} <span className="font-body text-[13px] font-normal text-cinza">{o.uf}</span>
+        <div className="mt-1 font-display text-[17px] font-bold leading-tight text-navy">{o.nome}</div>
+        <div className="mt-0.5 text-[12.5px] text-cinza">
+          {o.cidade} · {o.uf}
         </div>
-        <div className="mt-0.5 text-[11px] italic text-cinza">localização ilustrativa</div>
+        {!o.coordReal && <div className="mt-0.5 text-[11px] italic text-cinza">localização aproximada: centro do município</div>}
       </div>
     );
   }

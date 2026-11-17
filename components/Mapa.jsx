@@ -528,7 +528,7 @@ const Mapa = forwardRef(function Mapa(
           data: sebrae,
           getPosition: (d) => d.pos,
           radiusUnits: 'pixels',
-          getRadius: (d) => (d.sede ? 6 : 4) + fase(d) * (d.sede ? 20 : 14),
+          getRadius: (d) => (d.sede ? 5 : 3.5) + fase(d) * (d.sede ? 13 : 9),
           getFillColor: (d) => [...(d.sede ? [42, 79, 218] : [255, 128, 200]), Math.round(110 * (1 - fase(d)))],
           stroked: false,
           pickable: false,

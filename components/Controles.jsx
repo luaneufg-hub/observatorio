@@ -211,7 +211,7 @@ export function Busca({ municipios, onUF, onMunicipio, onIndicador }) {
 
 /* -------------------------------------------------------------- Camadas */
 export const CAMADAS = [
-  { id: 'sebrae', rotulo: 'Sebrae', desc: 'Sede estadual e escritórios regionais', icone: 'sebrae' },
+  { id: 'sebrae', rotulo: 'Sebrae', desc: 'Agências, Salas do Empreendedor e parceiros', icone: 'sebrae' },
   { id: 'municipais', rotulo: 'Indicadores municipais', desc: 'Coroplético por município', icone: 'rede' },
   { id: 'limites', rotulo: 'Limites estaduais', desc: 'Divisas entre as UFs', icone: 'localizacao' },
   { id: 'bioma', rotulo: 'Bioma', desc: 'Limites dos 6 biomas (IBGE)', icone: 'bioma' },
