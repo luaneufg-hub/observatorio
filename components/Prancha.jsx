@@ -5,16 +5,19 @@
 import { PathLayer, TextLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
 
-import { PRANCHA, hexParaRgb } from '@/lib/escalas';
+import { PRANCHA, corSeletor, hexParaRgb } from '@/lib/escalas';
 
 const LISTRAS_ESCURAS = 'repeating-linear-gradient(45deg, rgba(20,20,24,.6) 0 1px, transparent 1px 4px)';
 const LISTRAS_CLARAS = 'repeating-linear-gradient(45deg, rgba(255,255,255,.85) 0 1px, transparent 1px 4px)';
 
-const COR = hexParaRgb(PRANCHA.escura);
 const BRASIL = [-74.2, -33.9, -34.6, 5.4];
 
 export function construirPrancha({ foco, carimbo }) {
-  // foco: { bbox:[x0,y0,x1,y1], centro:[lon,lat] } | null (Brasil)
+  // foco: { bbox:[x0,y0,x1,y1], centro:[lon,lat], fundo?: cor do lugar, municipio?: bool } | null (Brasil)
+  // O círculo fica sempre sobre o lugar, então segue a cor dele. No município, o zoom é grande e o quadro e as
+  // letras também caem sobre o lugar; no estado, eles ficam fora, sobre o fundo claro, e continuam em rosa.
+  const COR_CIRCULO = hexParaRgb(corSeletor(foco?.fundo));
+  const COR = foco?.municipio ? COR_CIRCULO : hexParaRgb(PRANCHA.escura);
   const [x0, y0, x1, y1] = foco?.bbox || BRASIL;
   const px = (x1 - x0) * (foco ? 0.12 : 0.02);
   const py = (y1 - y0) * (foco ? 0.12 : 0.02);
@@ -73,7 +76,7 @@ export function construirPrancha({ foco, carimbo }) {
         radiusUnits: 'pixels',
         stroked: true,
         filled: false,
-        getLineColor: COR,
+        getLineColor: COR_CIRCULO,
         getLineWidth: 1.5,
         lineWidthUnits: 'pixels',
       }),
@@ -83,7 +86,7 @@ export function construirPrancha({ foco, carimbo }) {
         getPosition: (d) => d,
         getRadius: 5,
         radiusUnits: 'pixels',
-        getFillColor: COR,
+        getFillColor: COR_CIRCULO,
         stroked: true,
         getLineColor: [255, 255, 255],
         getLineWidth: 2,

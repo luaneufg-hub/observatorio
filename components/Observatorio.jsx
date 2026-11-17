@@ -274,8 +274,10 @@ export default function Observatorio() {
   const prancha = useMemo(() => {
     if (modo !== 'destaques' || !centros) return null;
     let foco = null;
-    if (mSel) foco = { bbox: [mSel.lon - 0.35, mSel.lat - 0.3, mSel.lon + 0.35, mSel.lat + 0.3], centro: [mSel.lon, mSel.lat] };
-    else if (uf) foco = { bbox: centros[uf].b, centro: centros[uf].c };
+    // cor do lugar em foco (setor em destaque), para o seletor trocar de rosa para amarelo onde o rosa some
+    const corSetor = (d) => (d?.setor ? SETOR_DESTAQUE_BY_ID[d.setor]?.cor : null);
+    if (mSel) foco = { bbox: [mSel.lon - 0.35, mSel.lat - 0.3, mSel.lon + 0.35, mSel.lat + 0.3], centro: [mSel.lon, mSel.lat], municipio: true, fundo: emDestaques ? corSetor(destaquesMun?.get(mSel.cod)) : null };
+    else if (uf) foco = { bbox: centros[uf].b, centro: centros[uf].c, fundo: emDestaques ? corSetor(DESTAQUES_UF.get(uf)) : null };
     return construirPrancha({
       foco,
       carimbo: {
@@ -286,7 +288,7 @@ export default function Observatorio() {
         lugar: mSel ? `${mSel.nome}, ${mSel.uf}` : uf ? UF_BY_SIGLA[uf].nome : 'Brasil',
       },
     });
-  }, [modo, centros, mSel, uf, ind, legenda, munBR, munUF, base]);
+  }, [modo, centros, mSel, uf, ind, legenda, munBR, munUF, base, emDestaques, destaquesMun]);
 
   /* ---------------------------------------------------- hover */
   const hoverInfo = useMemo(() => {
