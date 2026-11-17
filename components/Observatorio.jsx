@@ -6,6 +6,7 @@ import CaixaUF, { Bandeira, BandeiraQuadrada } from './CaixaUF';
 import Icon, { KitSvg, ILUSTRACAO_SETOR } from './Icon';
 import { Busca, Camadas, DropdownIndicadores, DropdownUF } from './Controles';
 import { construirPrancha } from './Prancha';
+import TiposPontos from './TiposPontos';
 import { UFS, UF_BY_SIGLA, REGIOES } from '@/lib/dados/ufs';
 import { BIOMAS, BIOMA_BY_ID } from '@/lib/dados/biomas';
 import { GRUPOS, INDICADOR_BY_ID, DADOS, formatar, SETORES, quocienteLocacional, ATUALIZADO_EM, ehReal, tituloRanking } from '@/lib/dados/indicadores';
@@ -459,6 +460,9 @@ export default function Observatorio() {
                 {!ehReal(ind, uf ? 'mun' : 'uf') && <> · {ind.real ? 'reais por estado, ilustrativos por município' : 'valores ilustrativos'}</>}
               </Nota>
             </Card>
+
+            {/* Pontos de atendimento: distinção por tipo, logo abaixo do card do indicador */}
+            {ind.id === 'pontos' && <TiposPontos base={base} uf={uf} mun={mSel} lugar={mSel ? mSel.nome : uf ? UF_BY_SIGLA[uf].nome : 'Brasil'} />}
 
             {/* Caixa do estado / município */}
             {caixa && <CaixaUF tamanho="lg" {...caixa} />}
