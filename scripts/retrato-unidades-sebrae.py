@@ -5,6 +5,11 @@
 #   lib/dados/retratos/sebrae-unidades-uf.json  → totais por UF e por tipo
 # Cada unidade é ligada ao município pelo nome da cidade (com variantes e distritos abaixo) ou, se o nome não
 # bate, pela coordenada. Sem coordenada ou com coordenada fora do município informado, usa o centro do município.
+# Complemento (scripts/fontes/unidades-complemento.csv): agências e escritórios regionais que faltam no SAS,
+# conferidos em fontes oficiais (nov. 2026) — o RS só tinha a agência de Porto Alegre e o AM só as de Manaus.
+#   rs → site do Sebrae RS, "Encontre o Sebrae" (sebraers.com.br/atendimento-encontre-o-sebrae), endereço por cidade
+#   am → Agência Sebrae de Notícias AM, 20 maio 2026: "Sebrae Amazonas inaugura 10º escritório regional em Autazes"
+# Sem coordenada: ficam no centro do município.
 # Uso: python3 scripts/retrato-unidades-sebrae.py <planilha.xlsx> [data AAAA-MM-DD]
 import sys, datetime
 import pandas as pd, json, unicodedata, re, glob, os, collections
@@ -26,7 +31,7 @@ ALIAS={('CE','ITAPAJE'):'ITAPAGE',('MG','BRAZOPOLIS'):'BRASOPOLIS',('MG','DONA E
  ('TO','TABOCAO'):'FORTALEZA DO TABOCAO',('MS','PARAISO DAS AGUAS'):'PARAISO DAS AGUAS',
  # distritos -> município sede
  ('ES','ARACE'):'DOMINGOS MARTINS',('MG','SERRA DO CIPO'):'SANTANA DO RIACHO',('AM','SANTO ANTONIO DO MATUPI'):'MANICORE',
- ('MT','BOA ESPERANCA DO NORTE'):'SORRISO'}
+ ('MT','BOA ESPERANCA DO NORTE'):'SORRISO',('RS','SANTANA DO LIVRAMENTO'):'SANT ANA DO LIVRAMENTO'}
 geoms=[];cods=[]
 for f in glob.glob(f'{R}/municipios/*.json'):
     for ft in json.load(open(f))['features']:
@@ -58,16 +63,27 @@ for r in d.itertuples():
     lon,lat=(r.lon,r.lat) if usa_coord else (m[4],m[5])
     out.append(dict(cod=cod,uf=m[2],tipo=r.tipo,nome=str(r.desc).strip(),lon=round(lon,5),lat=round(lat,5),coordReal=usa_coord))
 print('ok',len(out),'sem municipio',len(prob)); print(prob)
+# complemento de fontes oficiais (agências / escritórios regionais que faltam no SAS)
+FONTES=['Sebrae · Mapa de Unidades SAS','Site do Sebrae RS · Encontre o Sebrae (nov. 2026)','Agência Sebrae de Notícias AM (20 maio 2026)']
+for r in out: r['fonte']=0
+comp=pd.read_csv('scripts/fontes/unidades-complemento.csv')
+ja={(r['uf'],r['cod']) for r in out if r['tipo']=='Agência de Atendimento SEBRAE'}
+for r in comp.itertuples():
+    k=(r.uf,norm(r.cidade)); cod=mapa.get(k) or mapa.get((r.uf,ALIAS.get(k,k[1])))
+    if cod is None: print('complemento sem município:',r.uf,r.cidade); continue
+    if (r.uf,cod) in ja: continue
+    m=info[cod]
+    out.append(dict(cod=cod,uf=r.uf,tipo='Agência de Atendimento SEBRAE',nome=r.nome,lon=m[4],lat=m[5],coordReal=False,fonte={'rs':1,'am':2}[r.fonte]))
 TIPOS=['Agência de Atendimento SEBRAE','Sala do Empreendedor','Espaço SEBRAE (Parceiros)','Parcerias de Atendimento','Parceiro Sebrae']
 ROTULOS=['Agência Sebrae','Sala do Empreendedor','Espaço Sebrae (parceiros)','Parceria de atendimento','Parceiro Sebrae']
 data=sys.argv[2] if len(sys.argv)>2 else datetime.date.today().isoformat()
 fonte='Sebrae · Mapa de Unidades SAS (unidades ativas)'
 out.sort(key=lambda r:(TIPOS.index(r['tipo']),r['cod']))
-lin=[[r['cod'],TIPOS.index(r['tipo']),r['nome'],r['lon'],r['lat'],1 if r['coordReal'] else 0] for r in out]
+lin=[[r['cod'],TIPOS.index(r['tipo']),r['nome'],r['lon'],r['lat'],1 if r['coordReal'] else 0,r['fonte']] for r in out]
 os.makedirs('public/dados/sebrae',exist_ok=True)
-json.dump({'fonte':fonte,'atualizadoEm':data,'tipos':ROTULOS,'campos':['cod','tipo','nome','lon','lat','coordReal'],'u':lin},open('public/dados/sebrae/unidades.json','w'),ensure_ascii=False,separators=(',',':'))
+json.dump({'fonte':fonte,'atualizadoEm':data,'tipos':ROTULOS,'fontes':FONTES,'campos':['cod','tipo','nome','lon','lat','coordReal','fonte'],'u':lin},open('public/dados/sebrae/unidades.json','w'),ensure_ascii=False,separators=(',',':'))
 uf=collections.defaultdict(lambda:[0]*len(TIPOS)); br=[0]*len(TIPOS)
 for r in out:
     i=TIPOS.index(r['tipo']); uf[r['uf']][i]+=1; br[i]+=1
-json.dump({'fonte':fonte,'atualizadoEm':data,'tipos':ROTULOS,'br':br,'uf':dict(sorted(uf.items())),'semMunicipio':len(prob)},open('lib/dados/retratos/sebrae-unidades-uf.json','w'),ensure_ascii=False,indent=1)
+json.dump({'fonte':fonte,'atualizadoEm':data,'tipos':ROTULOS,'complemento':sum(1 for r in out if r['fonte']),'br':br,'uf':dict(sorted(uf.items())),'semMunicipio':len(prob)},open('lib/dados/retratos/sebrae-unidades-uf.json','w'),ensure_ascii=False,indent=1)
 print(len(lin),'unidades;',sum(r[5] for r in lin),'com coordenada real; por tipo',br)

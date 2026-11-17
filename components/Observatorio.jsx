@@ -676,6 +676,7 @@ function CaixaHover({ info, ind, valorTexto, area }) {
           {o.cidade} · {o.uf}
         </div>
         {!o.coordReal && <div className="mt-0.5 text-[11px] italic text-cinza">localização aproximada: centro do município</div>}
+        {o.fonte > 0 && <div className="mt-0.5 text-[11px] italic text-cinza">fonte: {o.fonteNome}</div>}
       </div>
     );
   }
