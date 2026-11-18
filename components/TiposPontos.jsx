@@ -54,7 +54,7 @@ export default function TiposPontos({ base, uf, mun, lugar }) {
           </li>
         ))}
       </ul>
-      <Nota>Fonte: Sebrae, Mapa de Unidades SAS (nov. 2026), com agências do RS e do AM conferidas nos sites oficiais</Nota>
+      <Nota>Fonte: Sebrae, Mapa de Unidades SAS (nov. 2026), com agências do RS e do AM conferidas nos sites oficiais e a sede do Sebrae Nacional</Nota>
     </Card>
   );
 }

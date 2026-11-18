@@ -9,6 +9,7 @@
 # conferidos em fontes oficiais (nov. 2026) — o RS só tinha a agência de Porto Alegre e o AM só as de Manaus.
 #   rs → site do Sebrae RS, "Encontre o Sebrae" (sebraers.com.br/atendimento-encontre-o-sebrae), endereço por cidade
 #   am → Agência Sebrae de Notícias AM, 20 maio 2026: "Sebrae Amazonas inaugura 10º escritório regional em Autazes"
+#   nacional → sede do Sebrae Nacional (SGAS 605, Asa Sul; coordenada do CEP 70200-904, exclusivo do Sebrae Nacional)
 # Sem coordenada: ficam no centro do município.
 # Uso: python3 scripts/retrato-unidades-sebrae.py <planilha.xlsx> [data AAAA-MM-DD]
 import sys, datetime
@@ -64,16 +65,18 @@ for r in d.itertuples():
     out.append(dict(cod=cod,uf=m[2],tipo=r.tipo,nome=str(r.desc).strip(),lon=round(lon,5),lat=round(lat,5),coordReal=usa_coord))
 print('ok',len(out),'sem municipio',len(prob)); print(prob)
 # complemento de fontes oficiais (agências / escritórios regionais que faltam no SAS)
-FONTES=['Sebrae · Mapa de Unidades SAS','Site do Sebrae RS · Encontre o Sebrae (nov. 2026)','Agência Sebrae de Notícias AM (20 maio 2026)']
+FONTES=['Sebrae · Mapa de Unidades SAS','Site do Sebrae RS · Encontre o Sebrae (nov. 2026)','Agência Sebrae de Notícias AM (20 maio 2026)','Sebrae Nacional · SGAS 605, Asa Sul (CEP 70200-904)']
 for r in out: r['fonte']=0
 comp=pd.read_csv('scripts/fontes/unidades-complemento.csv')
 ja={(r['uf'],r['cod']) for r in out if r['tipo']=='Agência de Atendimento SEBRAE'}
 for r in comp.itertuples():
     k=(r.uf,norm(r.cidade)); cod=mapa.get(k) or mapa.get((r.uf,ALIAS.get(k,k[1])))
     if cod is None: print('complemento sem município:',r.uf,r.cidade); continue
-    if (r.uf,cod) in ja: continue
+    # RS e AM: só onde o SAS não tem agência no município; o Sebrae Nacional entra sempre
+    if r.fonte in ('rs','am') and (r.uf,cod) in ja: continue
     m=info[cod]
-    out.append(dict(cod=cod,uf=r.uf,tipo='Agência de Atendimento SEBRAE',nome=r.nome,lon=m[4],lat=m[5],coordReal=False,fonte={'rs':1,'am':2}[r.fonte]))
+    tem=r.lon==r.lon and r.lat==r.lat  # não é NaN
+    out.append(dict(cod=cod,uf=r.uf,tipo='Agência de Atendimento SEBRAE',nome=r.nome,lon=float(r.lon) if tem else m[4],lat=float(r.lat) if tem else m[5],coordReal=bool(tem),fonte={'rs':1,'am':2,'nacional':3}[r.fonte]))
 TIPOS=['Agência de Atendimento SEBRAE','Sala do Empreendedor','Espaço SEBRAE (Parceiros)','Parcerias de Atendimento','Parceiro Sebrae']
 ROTULOS=['Agência Sebrae','Sala do Empreendedor','Espaço Sebrae (parceiros)','Parceria de atendimento','Parceiro Sebrae']
 data=sys.argv[2] if len(sys.argv)>2 else datetime.date.today().isoformat()

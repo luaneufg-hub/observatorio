@@ -1,23 +1,24 @@
-uf,cidade,nome,endereco,fonte
-RS,CAXIAS DO SUL,Sebrae RS · Caxias do Sul,"Rua Sinimbu, 816 - Nossa Senhora de Lourdes - CEP 95020-000",rs
-RS,PASSO FUNDO,Sebrae RS · Passo Fundo,"Rua General Osório, 1309 - Centro - CEP 99010-140",rs
-RS,IJUÍ,Sebrae RS · Ijuí,"Avenida 21 de Abril, 11 - Loja 1 - Centro - CEP 98700-000",rs
-RS,SANTA MARIA,Sebrae RS · Santa Maria,"Rua Olavo Bilac, 270 - Nossa Senhora de Fátima - CEP 97015-440",rs
-RS,PELOTAS,Sebrae RS · Pelotas,"Rua Padre Anchieta, 1916 - Centro - CEP 96015-420",rs
-RS,CANOAS,Sebrae RS · Canoas,"Rua Doutor Barcelos, 1073 - Centro - CEP 92310-200",rs
-RS,LAJEADO,Sebrae RS · Lajeado,"Rua Júlio de Castilhos, 1285, Loja 104 - Centro - CEP 95900-022",rs
-RS,ERECHIM,Sebrae RS · Erechim,"Rua Maurício Cardoso, 740, sala 2 - Centro - CEP 99700-556",rs
-RS,NOVO HAMBURGO,Sebrae RS · Novo Hamburgo,"Rua Bento Gonçalves, 2652 - Centro - CEP 93510-138",rs
-RS,SANTA CRUZ DO SUL,Sebrae RS · Santa Cruz do Sul,"Rua Ernesto Alves, 722 - Centro - CEP 96810-144",rs
-RS,SÃO LEOPOLDO,Sebrae RS · São Leopoldo,"Rua José Bonifácio, 204 - Loja 5 - Centro - CEP 93010-180",rs
-RS,SANTANA DO LIVRAMENTO,Sebrae RS · Santana do Livramento,"Rua dos Andradas, 483 - Centro - CEP 97573-000",rs
-AM,AUTAZES,Escritório Regional de Autazes,,am
-AM,COARI,Escritório Regional de Coari,,am
-AM,HUMAITÁ,Escritório Regional de Humaitá,,am
-AM,ITACOATIARA,Escritório Regional de Itacoatiara,,am
-AM,MANACAPURU,Escritório Regional de Manacapuru,,am
-AM,PARINTINS,Escritório Regional de Parintins,,am
-AM,PRESIDENTE FIGUEIREDO,Escritório Regional de Presidente Figueiredo,,am
-AM,SANTA ISABEL DO RIO NEGRO,Escritório Regional de Santa Isabel do Rio Negro,,am
-AM,TABATINGA,Escritório Regional de Tabatinga,,am
-AM,TEFÉ,Escritório Regional de Tefé,,am
+uf,cidade,nome,endereco,fonte,lon,lat
+RS,CAXIAS DO SUL,Sebrae RS · Caxias do Sul,"Rua Sinimbu, 816 - Nossa Senhora de Lourdes - CEP 95020-000",rs,,
+RS,PASSO FUNDO,Sebrae RS · Passo Fundo,"Rua General Osório, 1309 - Centro - CEP 99010-140",rs,,
+RS,IJUÍ,Sebrae RS · Ijuí,"Avenida 21 de Abril, 11 - Loja 1 - Centro - CEP 98700-000",rs,,
+RS,SANTA MARIA,Sebrae RS · Santa Maria,"Rua Olavo Bilac, 270 - Nossa Senhora de Fátima - CEP 97015-440",rs,,
+RS,PELOTAS,Sebrae RS · Pelotas,"Rua Padre Anchieta, 1916 - Centro - CEP 96015-420",rs,,
+RS,CANOAS,Sebrae RS · Canoas,"Rua Doutor Barcelos, 1073 - Centro - CEP 92310-200",rs,,
+RS,LAJEADO,Sebrae RS · Lajeado,"Rua Júlio de Castilhos, 1285, Loja 104 - Centro - CEP 95900-022",rs,,
+RS,ERECHIM,Sebrae RS · Erechim,"Rua Maurício Cardoso, 740, sala 2 - Centro - CEP 99700-556",rs,,
+RS,NOVO HAMBURGO,Sebrae RS · Novo Hamburgo,"Rua Bento Gonçalves, 2652 - Centro - CEP 93510-138",rs,,
+RS,SANTA CRUZ DO SUL,Sebrae RS · Santa Cruz do Sul,"Rua Ernesto Alves, 722 - Centro - CEP 96810-144",rs,,
+RS,SÃO LEOPOLDO,Sebrae RS · São Leopoldo,"Rua José Bonifácio, 204 - Loja 5 - Centro - CEP 93010-180",rs,,
+RS,SANTANA DO LIVRAMENTO,Sebrae RS · Santana do Livramento,"Rua dos Andradas, 483 - Centro - CEP 97573-000",rs,,
+AM,AUTAZES,Escritório Regional de Autazes,,am,,
+AM,COARI,Escritório Regional de Coari,,am,,
+AM,HUMAITÁ,Escritório Regional de Humaitá,,am,,
+AM,ITACOATIARA,Escritório Regional de Itacoatiara,,am,,
+AM,MANACAPURU,Escritório Regional de Manacapuru,,am,,
+AM,PARINTINS,Escritório Regional de Parintins,,am,,
+AM,PRESIDENTE FIGUEIREDO,Escritório Regional de Presidente Figueiredo,,am,,
+AM,SANTA ISABEL DO RIO NEGRO,Escritório Regional de Santa Isabel do Rio Negro,,am,,
+AM,TABATINGA,Escritório Regional de Tabatinga,,am,,
+AM,TEFÉ,Escritório Regional de Tefé,,am,,
+DF,BRASÍLIA,Sebrae Nacional (sede),"SGAS 605, Conjunto A - Asa Sul - CEP 70200-904",nacional,-47.88889,-15.81643
