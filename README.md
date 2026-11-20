@@ -82,6 +82,7 @@ scripts/                geração de malhas e retratos (ver "Atualizar os dados"
 | Inovação, bioeconomia | Sebrae (API do Observatório) | `public/dados/sebrae/` |
 | Tempo de abertura | REDESIM | `public/dados/redesim/` |
 | Produção agropecuária e extrativa | IBGE · PAM, PPM, PEVS 2024 | `public/dados/ibge/` |
+| População (densidade empresarial) | IBGE · Censo Demográfico 2022, SIDRA tabela 4709 (população residente) | `public/dados/ibge/populacao-municipio.json`, `lib/dados/retratos/populacao-uf.json` |
 | Calendário | Calendário de Comunicação DITEC 2026 (planilha) | `lib/dados/calendario.js` |
 | Municípios (lista) | IBGE · API de Localidades (5.571 municípios) | `public/geo/municipios-index.json` |
 | Malhas | IBGE · API de Malhas, qualidade intermediária (5.570 municípios) | `public/geo/` |
@@ -94,7 +95,8 @@ A documentação oficial das fontes do Observatório fica em https://observatori
 
 ### O que ainda é ilustrativo
 
-- **Interiorização e densidade empresarial:** valores reais por estado, ilustrativos por município.
+- **Interiorização:** só existe por estado (é a parcela fora da capital); com a camada municipal ligada, o mapa mostra o estado e avisa "disponível só por estado".
+- **Densidade empresarial:** real por estado e por município (pequenos negócios ativos ÷ população do Censo 2022). Boa Esperança do Norte (MT), criado depois do Censo, fica sem valor.
 - **Destaques setoriais por município:** são ilustrativos onde falta o dado de setor da API.
 - **Programas do Sebrae:** ficam ilustrativos só se a API e o retrato falharem.
 - **Painel de MPE:** alguns cartões de estado e de município, com o selo "fictício".
@@ -152,6 +154,7 @@ Cada script em `scripts/` converte uma resposta da API (ou um arquivo oficial) n
 | `retrato-ativas-municipio.mjs`, `retrato-setor-municipio.mjs`, `retrato-aberturas-municipio.mjs`, `retrato-abertura-baixas.mjs` | Receita Federal por município e UF |
 | `retrato-caged-municipio.mjs`, `retrato-rais-municipio.mjs`, `retrato-rais-mercantis.mjs` | emprego e remuneração |
 | `retrato-atendimentos-municipio.mjs`, `retrato-programa.mjs`, `retrato-regionais-sebrae.mjs` | atendimentos, programas e regionais do Sebrae |
+| `retrato-populacao.py <2022.xml>` | população do Censo 2022 por município e por estado (XML ou JSON do SIDRA, tabela 4709) |
 | `retrato-unidades-sebrae.py <planilha.xlsx>` | pontos de atendimento (planilha do Mapa de Unidades SAS + `scripts/fontes/unidades-complemento.csv`) |
 | `retrato-ig-inpi.py`, `retrato-inovacao.mjs`, `retrato-producao.mjs`, `retrato-exportacoes-ue.py` | IG, inovação, produção, exportações |
 | `retrato-calendario-ditec.py` | calendário DITEC (planilha em `scripts/fontes/`) |

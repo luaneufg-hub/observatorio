@@ -116,8 +116,11 @@ export default function Observatorio() {
   const classesUF = useMemo(() => classes(ind, [...valoresUF.values()], modo), [ind, valoresUF, modo]);
   const classesMun = useMemo(() => (valoresMun ? classes(ind, munVisiveis.map((m) => valoresMun.get(m.cod)), modo, { nivel: 'mun' }) : null), [ind, valoresMun, munVisiveis, modo]);
 
-  const munUF = camadas.municipais && !!uf;
-  const munBR = camadas.municipais && !uf;
+  // indicadores que só existem por estado (ex.: interiorização): o mapa não desce aos municípios
+  const soEstado = !!ind.soEstado;
+  const camadasMapa = soEstado && camadas.municipais ? { ...camadas, municipais: false } : camadas;
+  const munUF = camadasMapa.municipais && !!uf;
+  const munBR = camadasMapa.municipais && !uf;
 
   /* ---------------------------------------------------- Destaques: setor em destaque (maior QL) */
   const emDestaques = modo === 'destaques';
@@ -275,7 +278,7 @@ export default function Observatorio() {
     };
   }, [programa, base]);
   const caixa = useMemo(() => {
-    if (mSel && valoresMun) {
+    if (mSel && valoresMun && !soEstado) {
       const v = valoresMun.get(mSel.cod);
       const totalUF = ind.unidade === 'n' ? DADOS[mSel.uf][ind.id] : null;
       return { uf: mSel.uf, titulo: mSel.nome, n: categorico ? null : posMun[mSel.cod], ...metricasMunicipio(ind, mSel, v, totalUF, posMun[mSel.cod], rankingMun.length) };
@@ -288,7 +291,7 @@ export default function Observatorio() {
       return { uf, titulo: UF_BY_SIGLA[uf].nome, n: categorico ? null : posUF[uf], ...metricasUF(ind, uf, ind.brasil ?? mediaUF), ...extra };
     }
     return null;
-  }, [mSel, valoresMun, uf, ind, posMun, posUF, rankingMun, mediaUF, categorico]);
+  }, [mSel, valoresMun, uf, ind, posMun, posUF, rankingMun, mediaUF, categorico, soEstado]);
 
   const prancha = useMemo(() => {
     if (modo !== 'destaques' || !centros) return null;
@@ -326,7 +329,7 @@ export default function Observatorio() {
 
   /* ---------------------------------------------------- resumo do card principal */
   const resumo = useMemo(() => {
-    if (mSel && valoresMun) {
+    if (mSel && valoresMun && !soEstado) {
       const v = valoresMun.get(mSel.cod);
       return { valor: categorico ? BIOMA_BY_ID[v]?.nome : formatar(ind, v, { curto: true }), selo: categorico ? null : `${posMun[mSel.cod]}º de ${rankingMun.length} em ${mSel.uf}`, apoio: mSel.nome };
     }
@@ -348,8 +351,8 @@ export default function Observatorio() {
       : { valor: formatar(ind, soma / vals.length), selo: 'Média das UFs', apoio: '27 UFs' };
   }, [mSel, valoresMun, uf, valoresUF, ind, categorico, posMun, posUF, rankingMun, nUFcomValor]);
 
-  const ranking = uf ? rankingMun : rankingUF;
-  const valorRank = (x) => (uf ? valoresMun?.get(x.cod) : valoresUF.get(x.sigla));
+  const ranking = uf && !soEstado ? rankingMun : rankingUF;
+  const valorRank = (x) => (x.cod ? valoresMun?.get(x.cod) : valoresUF.get(x.sigla));
   const maxRank = ranking.length ? Math.max(...ranking.slice(0, 5).map(valorRank)) : 1;
 
   /* ---------------------------------------------------- render */
@@ -457,7 +460,7 @@ export default function Observatorio() {
               <Nota>
                 {grupo.rotulo} · {ATUALIZADO_EM}
                 {/* só os dados que ainda não são reais levam aviso; com estado aberto, o mapa mostra os municípios */}
-                {!ehReal(ind, uf ? 'mun' : 'uf') && <> · {ind.real ? 'reais por estado, ilustrativos por município' : 'valores ilustrativos'}</>}
+                {soEstado ? <> · disponível só por estado</> : !ehReal(ind, uf ? 'mun' : 'uf') && <> · {ind.real ? 'reais por estado, ilustrativos por município' : 'valores ilustrativos'}</>}
               </Nota>
             </Card>
 
@@ -471,9 +474,9 @@ export default function Observatorio() {
             {!categorico && (
               <Card
                 icone="setores"
-                rotulo={tituloRanking(ind, uf)}
+                rotulo={tituloRanking(ind, soEstado ? null : uf)}
                 quebrarRotulo
-                info={`${uf ? 'Os cinco municípios da UF' : 'As cinco UFs'} com ${ind.menorMelhor ? 'os menores' : 'os maiores'} valores do indicador selecionado. ${uf ? 'Clique para ver no mapa.' : 'Clique para abrir a UF e ver os municípios.'}`}
+                info={`${uf && !soEstado ? 'Os cinco municípios da UF' : 'As cinco UFs'} com ${ind.menorMelhor ? 'os menores' : 'os maiores'} valores do indicador selecionado. ${uf && !soEstado ? 'Clique para ver no mapa.' : 'Clique para abrir a UF e ver os municípios.'}`}
               >
                 <div className="mt-1">
                   {ranking.slice(0, 5).map((x, i) => (
@@ -483,8 +486,8 @@ export default function Observatorio() {
                       nome={x.nome}
                       frac={valorRank(x) / maxRank}
                       valor={formatar(ind, valorRank(x), { curto: true })}
-                      ativo={(x.cod && x.cod === municipio) || (!uf && x.sigla === uf)}
-                      onClick={() => (uf ? irMunicipio(x.cod, uf) : irUF(x.sigla))}
+                      ativo={(x.cod && x.cod === municipio) || (x.sigla && x.sigla === uf)}
+                      onClick={() => (x.cod ? irMunicipio(x.cod, uf) : irUF(x.sigla))}
                     />
                   ))}
                 </div>
@@ -570,7 +573,7 @@ export default function Observatorio() {
               centros={centros}
               uf={uf}
               municipio={municipio}
-              camadas={camadas}
+              camadas={camadasMapa}
               valoresUF={mapaValoresUF}
               valoresMun={mapaValoresMun}
               classesUF={mapaClassesUF}
@@ -641,6 +644,7 @@ export default function Observatorio() {
                   </li>
                 ))}
               </ul>
+              {soEstado && <p className="mt-1.5 text-[10.5px] italic leading-snug text-cinza">Disponível só por estado: o mapa não mostra os municípios para este indicador.</p>}
               {camadas.sebrae && (
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[#efeae2] pt-2 text-[11.5px] text-[#2b2b30]">
                   <span className="inline-flex items-center gap-1.5">
