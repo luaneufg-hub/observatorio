@@ -1,111 +1,158 @@
-# Observatório Sebrae · Mapa por território (Fase 1)
+# Observatório Setorial Territorial · Página Brasil
 
-Página **Brasil** do Observatório com mapa coroplético interativo e barra lateral de controles.
-Fase 1 = mapa + controles. Gráficos (Recharts/ECharts) e relatório A4 (@react-pdf/renderer) ficam para a fase 2.
+Protótipo da nova página **Brasil** do [Observatório Sebrae](https://observatorio.sebrae.com.br): mapa interativo por estado e município, painéis de micro e pequenas empresas, estudos, calendário e uma versão mobile. Desenvolvido pelo Sebrae (Núcleo de Comunicação da DITEC), com tecnologia da Datawheel.
 
-> **Valores ilustrativos.** Os números dos indicadores são fictícios (gerados de forma determinística) e servem só para validar o layout.
-> As malhas e as participações dos biomas são reais (IBGE).
+**Prévias publicadas**
+- Desktop: https://claude.ai/artifact/UxabRDhRWqkgpUX1wnwGAe
+- Mobile: https://claude.ai/artifact/BsJY9G7fuRhPPmWd91YqvU
+
+Quase todos os números são **reais**: vêm da API do Observatório, com retratos salvos para quando a API não responde. O que ainda é ilustrativo aparece marcado na tela com o selo "fictício" ou a nota "valores ilustrativos" (veja [O que ainda é ilustrativo](#o-que-ainda-é-ilustrativo)).
 
 ## Como rodar
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm run build && npm start   # versão de produção
+cp .env.local.example .env.local   # e preencha a chave da API
+npm run dev                         # http://localhost:3000
+npm run build:estatico              # versão estática em dist-estatico/
 ```
 
-Node 18.17+.
+Node 18.17+. A versão estática (Vite, configuração em `vite.estatico.config.mjs`) é a que vai para as prévias. Ela funciona em qualquer servidor de arquivos, inclusive numa subpasta. Para a prévia mobile, publique o mesmo build com `<html lang="pt-BR" data-versao="mobile">`.
 
-**Versão estática (sem servidor):** `npm run build:estatico` gera `dist-estatico/` com os mesmos componentes empacotados pelo Vite (pasta `estatico/`). Dá para abrir em qualquer servidor de arquivos, inclusive numa subpasta. É a versão usada na prévia publicada.
+**Chave da API.** `.env.local` guarda `NEXT_PUBLIC_OBS_API` e `NEXT_PUBLIC_OBS_TOKEN`. Ele não vai para o repositório; só o modelo `.env.local.example`, sem chave. A chave do protótipo é provisória: para o site no ar, peça uma chave de uso à equipe do Observatório.
+
+## Páginas e rotas
+
+| Rota | O que é | Componente |
+|---|---|---|
+| `#/` | Página Brasil: mapa, barra lateral, painéis de MPE e setores | `components/Observatorio.jsx` |
+| `#/estudos` | Estudos (Impulsionar Negócios, Potencial Exportador) | `components/estudos/` |
+| `#/calendario` | Calendário de eventos DITEC 2026, com botões para Google, Outlook e .ics | `components/calendario/` |
+| `#/m` | Versão mobile (Início, Territórios, Relatórios, Comparar, Calendário) | `components/mobile/AppMobile.jsx` |
+
+`components/Raiz.jsx` escolhe a versão. Telas com menos de 768 px abrem o mobile, e `data-versao="mobile"` na tag `<html>` força o mobile. O rodapé tem o botão de voltar à versão mobile.
 
 ## Stack
 
-| Camada | Escolha | Observação |
-|---|---|---|
-| Framework | **Next.js 14** (App Router, JS) | `app/page.jsx` → `components/Observatorio.jsx` |
-| Mapa base | **MapLibre GL JS 4** | API idêntica ao Mapbox GL. Troca na seção "Migrar para Mapbox" |
-| Camadas de dados | **Deck.gl 9** via `MapboxOverlay` | pontos Sebrae, siglas das UFs, moldura da visualização Destaques |
-| Estilo | **Tailwind 3** + variáveis CSS por tema | `tailwind.config.js` e `app/globals.css` |
-| Escalas | d3-scale / d3-array / d3-interpolate | quintis, rampas, contraste das siglas |
+| Camada | Escolha |
+|---|---|
+| Framework | Next.js 14 (App Router, JS) e Vite para a versão estática |
+| Mapa | MapLibre GL JS 4 e Deck.gl 9 (`MapboxOverlay`): pinos do Sebrae, siglas das UFs, seletor da visualização Destaques |
+| Gráficos | Recharts (setores) e d3-geo (minimapa do mobile) |
+| Estilo | Tailwind 3 com variáveis CSS por tema (`claro`, `navy`, `escuro`) |
+| Escalas | d3-scale, d3-array, d3-interpolate |
 
 ## Estrutura
 
 ```
-app/                  layout, página e CSS global (temas claro · navy · escuro)
+app/                    layout, página e CSS global (temas)
 components/
-  Observatorio.jsx    estado da página: indicador, UF, município, camadas, tema, visualização
-  Mapa.jsx            MapLibre + Deck.gl, data-driven styling, hover, clique, carga sob demanda
-  Prancha.jsx         2ª visualização "Destaques" (moldura tracejada, N/S/L/O, carimbo e círculo de foco)
-  Controles.jsx       busca global, dropdowns de Indicadores e UF, checkboxes de camadas
-  Card.jsx            caixa padrão: ícone + rótulo + ícone de informação (InfoTip)
-  CaixaUF.jsx         caixa de destaque do estado/município (bandeira, posição, 2 métricas)
-  Icon.jsx            Iconly Regular (sistema) + ícones de conteúdo do kit
+  Observatorio.jsx      estado da página: indicador, UF, município, camadas, tema, visualização
+  Mapa.jsx              MapLibre + Deck.gl: cor por feature-state, hachuras, pinos, foco de IG
+  Prancha.jsx           visualização "Destaques setoriais" (quadro, N/S/L/O, círculo de foco, legenda)
+  Controles.jsx         busca, dropdowns de indicador e UF, camadas do mapa
+  SebraeTerritorio.jsx  programas do Sebrae no território
+  TiposPontos.jsx       pontos de atendimento por tipo
+  IndicacoesGeograficas.jsx, CadeiasProdutivas.jsx, InovacaoTerritorio.jsx
+  diagnostico/          Micro e Pequenas empresas e Setores
+  estudos/, calendario/, comparar/, mobile/
+  Rodape.jsx, SeletorTema.jsx, LogosParceiros.jsx
 lib/
-  escalas.js          rampa verde/amarelo/bege, rampas de bioma, expressões MapLibre
-  dados/              indicadores, UFs, biomas, municípios e métricas das caixas
-public/geo/           malhas otimizadas (ver "Dados geográficos")
+  api/observatorio.js   cliente da API (Tesseract) e consultas do site
+  escalas.js            rampas de cor, classes, hachuras, contraste
+  dados/                indicadores, municípios, destaques, unidades, calendário…
+  dados/retratos/       retratos pequenos que entram no código (totais Brasil e UF)
+public/
+  geo/                  malhas (estados, municípios do Brasil e por UF), índice e biomas
+  dados/                retratos por município, carregados sob demanda
+scripts/                geração de malhas e retratos (ver "Atualizar os dados")
 ```
+
+## Dados e fontes
+
+| Tema | Fonte | Onde |
+|---|---|---|
+| Pequenos negócios ativos, por porte e por setor; aberturas e baixas | Receita Federal · CNPJ (API do Observatório, cube `RF`) | `public/dados/rf/` |
+| Empregos (saldo) | Novo CAGED (API do Observatório) | `public/dados/caged/` |
+| Empregados e remuneração em MPE | RAIS 2025 (API do Observatório) | `public/dados/rais/` |
+| Atendimentos e cobertura do Sebrae | Sebrae · atendimentos (cube `Sebrae_Atendimento`) | `public/dados/sebrae/atendimentos-municipio.json` |
+| Programas (Jornada, Sala do Empreendedor, Cidade Empreendedora…) | API do Observatório, dimensão Jornada do cube `RF`; Delas, ALI e Educação Empreendedora pelo cube de atendimentos | `public/dados/programas/` |
+| Pontos de atendimento e pinos | Sebrae · Mapa de Unidades SAS (Qlik interno, nov. 2026), com complemento oficial do RS, do AM e do Sebrae Nacional | `public/dados/sebrae/unidades.json` |
+| Indicações geográficas | INPI · listas de IP e DO | `public/dados/inpi/` |
+| Inovação, bioeconomia | Sebrae (API do Observatório) | `public/dados/sebrae/` |
+| Tempo de abertura | REDESIM | `public/dados/redesim/` |
+| Produção agropecuária e extrativa | IBGE · PAM, PPM, PEVS 2024 | `public/dados/ibge/` |
+| Calendário | Calendário de Comunicação DITEC 2026 (planilha) | `lib/dados/calendario.js` |
+| Municípios (lista) | IBGE · API de Localidades (5.571 municípios) | `public/geo/municipios-index.json` |
+| Malhas | IBGE · API de Malhas, qualidade intermediária (5.570 municípios) | `public/geo/` |
+| Biomas | IBGE, Biomas 2019, via geobr (IPEA) | `public/geo/biomas.json`, `municipios-biomas.json` |
+| Bandeiras | pierrelapalu/icones-bandeiras-br-uf (CC0) | gerado por `scripts/gerar-bandeiras.mjs` |
+
+A documentação oficial das fontes do Observatório fica em https://observatorio.sebrae.com.br/about/fontes-de-dados.
+
+**Estratégia "sempre atualizado":** o site consulta a API ao abrir e, se ela falhar (rede, CORS ou chave), usa o último retrato salvo.
+
+### O que ainda é ilustrativo
+
+- **Interiorização e densidade empresarial:** valores reais por estado, ilustrativos por município.
+- **Destaques setoriais por município:** são ilustrativos onde falta o dado de setor da API.
+- **Programas do Sebrae:** ficam ilustrativos só se a API e o retrato falharem.
+- **Painel de MPE:** alguns cartões de estado e de município, com o selo "fictício".
+
+## Mapa
+
+- **Do Brasil ao município:** clicar na UF enquadra o estado e liga "Indicadores municipais"; clicar no município aproxima e abre a caixa de destaque.
+- **Cor por `feature-state`:** os polígonos são carregados uma vez (`promoteId: 'cod'`). Trocar de indicador só atualiza o valor de cada município ou estado, sem reprocessar a geometria.
+- **Carga sob demanda:** a malha do Brasil por município (cerca de 2 MB) só é baixada ao ligar a camada sem UF. Cada estado tem um arquivo próprio, mais detalhado, baixado ao entrar nele.
+- **Pontos de atendimento:** os pinos são azuis para as agências (sede e escritórios regionais), rosa para as Salas do Empreendedor e verdes (`#3D824F`) para os parceiros. No Brasil aparecem só as agências; ao escolher um estado, todas as unidades dele. O indicador "Pontos de atendimento" liga os pinos sozinho.
+- **Destaques setoriais:**
+  - cores da paleta Ativo_10: agro `#A7BFD9`, comércio `#44442A`, indústria `#E04510`, serviços `#A69F4E`;
+  - concentração forte (QL ≥ 1,5) em hachura cruzada tom sobre tom;
+  - seletor amarelo `#FFD400` com contorno escuro ao selecionar um lugar.
+- **Indicação geográfica:** ao clicar numa IG, o mapa aproxima a área e mostra o marcador com o nome do produto.
 
 ## Design system
 
-- **Identidade:** do UI kit do Observatório: navy `#070568`/`#0A2474`, azul `#2A4FDA`, lima `#C9DF60`, verdes `#60B466`/`#36BF76`, off-whites. Fontes Proxima Nova (títulos), Aktiv Grotesk (texto), Lato (detalhes), carregadas do kit Adobe Fonts `hpk7hne`. Inter e Lato ficam como reserva.
-- **Hierarquia das caixas** (referência FinanceHub): todo card tem ícone, rótulo e **ícone de informação** com tooltip, e depois o número principal, o selo de posição e a nota de fonte e data.
-- **Ícones de sistema:** Iconly Regular, *border* por padrão e *duotone* no estado ativo.
-- **Temas:** `data-theme="claro|navy|escuro"` na raiz. Os tokens ficam em `tema.*` no Tailwind.
-- **Mapa:** rampa de 5 classes bege → amarelo → verdes (`RAMPA_EMPRESAS`). Os biomas usam as cores do kit só nos indicadores de bioma. As siglas usam Lato Black `#232122`, sem contorno, e ficam brancas só sobre os tons escuros. O hover escurece a área e mostra a caixa com cabeçalho rosa.
+- **Cores:** UI kit do Observatório. Navy `#070568`/`#0A2474`, azul `#2A4FDA`, lima `#C9DF60`, verdes `#60B466`/`#36BF76` e off-whites.
+- **Rampas do mapa** (`lib/escalas.js`), todas verificadas para daltonismo (ΔE em CAM02-UCS, simulações de deuteranomalia, protanomalia e tritanomalia):
+  - verde (`RAMPA_EMPRESAS`): pequenos negócios ativos, setores econômicos e bioeconomia;
+  - azul (Ativo_15/14/12): demais indicadores;
+  - quente (Ativo_11): interiorização, densidade, aberturas, baixas, MEI, ME e EPP, em teste;
+  - biomas: cores do kit.
+- **Fontes:** Proxima Nova (títulos e números), Aktiv Grotesk (texto) e Lato (detalhes). Hoje vêm do kit Adobe Fonts `hpk7hne`, que o visualizador das prévias bloqueia, e as prévias caem na Inter. Embutir os arquivos das fontes no site está em andamento.
+- **Caixas:** todo card tem ícone, rótulo, ícone de informação com fonte e data, número principal e selo de posição.
+- **Ícones:** Iconly Regular (sistema) e ícones de conteúdo do kit.
+- **Temas:** `data-theme="claro|navy|escuro"`, com o seletor de três posições no topo.
+- **Acessibilidade:** contraste WCAG nos textos; as siglas das UFs ficam escuras ou brancas conforme o fundo; o movimento respeita "reduzir movimento".
 
-## Navegação e desempenho
+## Atualizar os dados
 
-- **Do Brasil ao município:** clique na UF → enquadra o estado e liga “Indicadores municipais” → clique no município → aproxima e mostra a caixa de destaque. A trilha (Território › UF › Município) e o botão voltar sobem um nível.
-- **Cor por `feature-state`:** os polígonos são carregados uma vez (`promoteId: 'cod'`). Trocar de indicador só chama `setFeatureState` com o valor e a classe. A geometria não é reprocessada e a cor sai de expressões `step`/`match`.
-- **Carga sob demanda:** a malha municipal do Brasil (5.564 municípios, 2 MB, simplificada a 3%) só é baixada quando a camada é ligada sem UF. Cada UF tem um arquivo próprio mais detalhado (`public/geo/municipios/{UF}.json`, de 4 a 430 KB), baixado ao entrar no estado.
-- O MapLibre fatia o GeoJSON em tiles no navegador (geojson-vt). Os arquivos de `/geo` têm cache longo (`next.config.mjs`).
+Cada script em `scripts/` converte uma resposta da API (ou um arquivo oficial) num retrato. O cabeçalho de cada script traz a consulta e o uso. Os principais:
 
-### Para produção: vector tiles
+| Script | Gera |
+|---|---|
+| `retrato-ativas-municipio.mjs`, `retrato-setor-municipio.mjs`, `retrato-aberturas-municipio.mjs`, `retrato-abertura-baixas.mjs` | Receita Federal por município e UF |
+| `retrato-caged-municipio.mjs`, `retrato-rais-municipio.mjs`, `retrato-rais-mercantis.mjs` | emprego e remuneração |
+| `retrato-atendimentos-municipio.mjs`, `retrato-programa.mjs`, `retrato-regionais-sebrae.mjs` | atendimentos, programas e regionais do Sebrae |
+| `retrato-unidades-sebrae.py <planilha.xlsx>` | pontos de atendimento (planilha do Mapa de Unidades SAS + `scripts/fontes/unidades-complemento.csv`) |
+| `retrato-ig-inpi.py`, `retrato-inovacao.mjs`, `retrato-producao.mjs`, `retrato-exportacoes-ue.py` | IG, inovação, produção, exportações |
+| `retrato-calendario-ditec.py` | calendário DITEC (planilha em `scripts/fontes/`) |
+| `corrigir-aneis.mjs` + `gerar-malhas.sh` | malhas a partir do GeoJSON da API de Malhas do IBGE (simplificação por distância: 1.600 m por estado, 3.500 m Brasil, 2.500 m estados) |
 
-Com malhas mais detalhadas (setores censitários, por exemplo), gere tiles vetoriais com **tippecanoe** e sirva PMTiles ou MBTiles:
+## Branches
 
-```bash
-tippecanoe -o municipios.pmtiles -l municipios -z12 --coalesce-densest-as-needed \
-  --use-attribute-for-id=cod municipios-br-completo.geojson
-```
+| Branch | Conteúdo |
+|---|---|
+| `main` | versão atual (desktop e mobile) |
+| `mobile-v2` | retrato de 20 nov. 2026: paletas novas, unidades do Sebrae, municípios e malhas do IBGE |
+| `mobile-v1` | primeira versão mobile (10 nov. 2026) |
+| `desktop-final`, `desktop-v1-backup` | backups do desktop |
 
-No `Mapa.jsx`, troque as fontes `mun-br`/`mun-uf` por uma fonte `vector` com `promoteId: { municipios: 'cod' }` e informe `'source-layer': 'municipios'` nas camadas. As expressões de cor continuam iguais.
+## Pendências
 
-## Migrar para Mapbox
-
-1. `npm i mapbox-gl` e remova `maplibre-gl`.
-2. Em `components/Mapa.jsx`, troque o import e o CSS por `mapbox-gl` e defina `mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN`.
-3. Opcional: troque o estilo vazio por um estilo do Mapbox Studio, mantendo as camadas de dados por cima.
-
-O `MapboxOverlay` do Deck.gl funciona com os dois.
-
-## Dados geográficos
-
-| Arquivo | Fonte | Licença |
-|---|---|---|
-| `municipios-br.json`, `municipios/{UF}.json`, `ufs.json` | Malha municipal do IBGE, via [tbrugz/geodata-br](https://github.com/tbrugz/geodata-br), simplificada com mapshaper. As UFs foram dissolvidas a partir dos municípios | dados públicos IBGE |
-| `biomas.json`, `municipios-biomas.json`, `uf-biomas` em `lib/dados/ufs.js` | Biomas IBGE 2019 via [geobr](https://github.com/ipeaGIT/geobr) (IPEA). Participações calculadas por interseção de polígonos (shapely) | IBGE · geobr (MIT) |
-| Bandeiras das UFs | [pierrelapalu/icones-bandeiras-br-uf](https://github.com/pierrelapalu/icones-bandeiras-br-uf) | CC0 |
-| Ícones de sistema | Iconly (arquivo enviado pela equipe) | licença Iconly |
-
-## Sebrae no território
-
-O bloco da barra lateral (`components/SebraeTerritorio.jsx`, dados em `lib/dados/sebraeTerritorio.js`) lista os programas do Sebrae no Brasil, no estado ou no município. Tocar num programa destaca no mapa os municípios participantes. Os programas da dimensão "Jornada" do cube RF são consultados na API do Observatório (`drilldowns=<programa>,<município do programa>`). Os 8 programas dessa dimensão têm retrato real em `public/dados/programas/` (para atualizar: `node scripts/retrato-programa.mjs <resposta-da-api.json>`). Sebrae Delas, ALI e Educação Empreendedora dependem do cube de Atendimentos Sebrae.
-
-## Diagnóstico das micro e pequenas empresas
-
-Abaixo do mapa, duas seções:
-
-- **Micro e Pequenas empresas** (`components/diagnostico/MicroPequenas.jsx`): grandes números em cartões com contador animado (`Contador.jsx`, conta ao entrar na tela e respeita "reduzir movimento"). Cada cartão tem uma microinteração (barra que enche, pictograma, moedas, globo) e um ícone (i) com definição e fonte.
-- **Setores** (`components/diagnostico/Setores.jsx`, Recharts, carregado sob demanda): cartões de setor, abas e seletor de período. As barras crescem ao trocar de aba ou de ano. No hover, a barra fica em destaque e as outras esmaecem. Clicar numa barra seleciona o setor e atualiza o resumo.
-
-**Território (Brasil › Estado › Cidade):** a barra `SeletorTerritorio.jsx` fica presa ao topo enquanto a seção está na tela e é sincronizada com o mapa. O botão **Onde estou** pede a localização ao navegador e acha a UF e o município por ponto-no-polígono nas próprias malhas (`lib/geo/localizar.js`), sem serviço externo. Os valores de estados e municípios vêm de `lib/dados/mpeTerritorio.js` e são **fictícios** até a ligação com a API. Cada cartão mostra o selo "fictício". Dados que só existem até o nível do estado (PNAD, pesquisas) mostram o valor do estado quando uma cidade está selecionada.
-
-Os números estão em `lib/dados/mpe.js`, com fonte, data e situação de cada um: `publicado`, `calculado` ou `pendente`. A lista `PENDENCIAS` reúne o que depende de endpoints da API do Observatório. `carregarDiagnostico()` é o ponto único para trocar os valores pelas consultas à API.
-
-## Fase 2 (próximos passos)
-
-- Gráficos fora do mapa (Recharts ou ECharts): série histórica, composição setorial e comparação entre UFs.
-- Relatório A4 por estado/município com `@react-pdf/renderer` (ou Puppeteer para imprimir a própria página).
-- Ligar os indicadores à API ou base real do Observatório (`lib/dados/indicadores.js` é o único ponto a trocar).
+- **Chave da API:** chave de uso definitiva para o site no ar.
+- **Pontos de atendimento:** extração mensal ou API do Mapa de Unidades SAS. Pedir ao Sebrae RS e ao Sebrae AM que cadastrem as agências no SAS, para o complemento manual deixar de ser necessário.
+- **Sede e escritórios regionais:** separar os dois no card de tipos (a sede fica na capital; em Brasília, Sebrae DF e Sebrae Nacional).
+- **Fontes:** embutir Proxima Nova e Aktiv Grotesk.
+- **Boa Esperança do Norte (MT):** incluir o contorno quando a API de Malhas do IBGE trouxer o município.
+- **Indicações geográficas:** fotos das IGs (`lib/dados/igFotos.js`).
