@@ -119,11 +119,29 @@ A documentação oficial das fontes do Observatório fica em https://observatori
   - azul (Ativo_15/14/12): demais indicadores;
   - quente (Ativo_11): interiorização, densidade, aberturas, baixas, MEI, ME e EPP, em teste;
   - biomas: cores do kit.
-- **Fontes:** Proxima Nova (títulos e números), Aktiv Grotesk (texto) e Lato (detalhes). Hoje vêm do kit Adobe Fonts `hpk7hne`, que o visualizador das prévias bloqueia, e as prévias caem na Inter. Embutir os arquivos das fontes no site está em andamento.
+- **Fontes:** Proxima Nova (títulos e números), Aktiv Grotesk (texto) e Lato (detalhes), pelo kit Adobe Fonts `hpk7hne` (uso não comercial do Observatório). Inter e Lato ficam embutidas como reserva. Veja [Fontes](#fontes).
 - **Caixas:** todo card tem ícone, rótulo, ícone de informação com fonte e data, número principal e selo de posição.
 - **Ícones:** Iconly Regular (sistema) e ícones de conteúdo do kit.
 - **Temas:** `data-theme="claro|navy|escuro"`, com o seletor de três posições no topo.
 - **Acessibilidade:** contraste WCAG nos textos; as siglas das UFs ficam escuras ou brancas conforme o fundo; o movimento respeita "reduzir movimento".
+
+## Fontes
+
+O código de incorporação da Adobe Fonts está em `app/layout.jsx` (Next.js) e em `estatico/index.html` (versão estática e prévias):
+
+```html
+<link rel="stylesheet" href="https://use.typekit.net/hpk7hne.css">
+```
+
+Nomes no CSS (`tailwind.config.js`):
+
+| Uso | Família | Classe Tailwind | Pesos usados |
+|---|---|---|---|
+| Títulos e números | `proxima-nova` | `font-display` | 400, 500, 600, 700, 800 |
+| Texto | `aktiv-grotesk` | `font-body` | 400, 500, 600, 700 |
+| Detalhes e notas | `Lato` (embutida, `@fontsource/lato`) | `font-detail` | 400, 400 itálico, 700, 900 |
+
+O kit carrega nas prévias publicadas (conferido em 20 nov. 2026). Ambientes sem acesso à Adobe, como servidores de teste, mostram a Inter no lugar.
 
 ## Atualizar os dados
 
@@ -153,6 +171,5 @@ Cada script em `scripts/` converte uma resposta da API (ou um arquivo oficial) n
 - **Chave da API:** chave de uso definitiva para o site no ar.
 - **Pontos de atendimento:** extração mensal ou API do Mapa de Unidades SAS. Pedir ao Sebrae RS e ao Sebrae AM que cadastrem as agências no SAS, para o complemento manual deixar de ser necessário.
 - **Sede e escritórios regionais:** separar os dois no card de tipos (a sede fica na capital; em Brasília, Sebrae DF e Sebrae Nacional).
-- **Fontes:** embutir Proxima Nova e Aktiv Grotesk.
 - **Boa Esperança do Norte (MT):** incluir o contorno quando a API de Malhas do IBGE trouxer o município.
 - **Indicações geográficas:** fotos das IGs (`lib/dados/igFotos.js`).
